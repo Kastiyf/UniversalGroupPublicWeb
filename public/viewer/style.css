@@ -1,0 +1,1853 @@
+* {
+    box-sizing: border-box;
+}
+
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    font-family:
+        Inter,
+        Arial,
+        sans-serif;
+
+    color: #151515;
+}
+
+
+body {
+    background: #e9e9e9;
+}
+
+
+/* =====================================================
+   VISOR
+===================================================== */
+
+.viewer3d {
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    overflow: hidden;
+
+    background: #e9e9e9;
+}
+
+
+.viewer3d canvas {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+}
+
+
+/* =====================================================
+   PANEL INFORMACIÓN
+===================================================== */
+
+.info-panel {
+    position: fixed;
+
+    z-index: 100;
+
+    top: 20px;
+    right: 20px;
+
+    width: 286px;
+
+    padding: 19px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .96
+        );
+
+    border:
+        1px solid
+        rgba(
+            0,
+            0,
+            0,
+            .06
+        );
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 15px 45px
+        rgba(
+            0,
+            0,
+            0,
+            .12
+        );
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+}
+
+
+.info-panel.hidden {
+    opacity: 0;
+
+    transform:
+        translateY(-8px)
+        scale(.97);
+
+    pointer-events:
+        none;
+}
+
+
+/* =====================================================
+   PANEL HEADER
+===================================================== */
+
+.panel-brand {
+    margin-bottom: 4px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: .09em;
+
+    color: #555;
+}
+
+
+.info-panel h1 {
+    margin: 0;
+
+    font-size: 21px;
+
+    line-height: 1.1;
+
+    font-weight: 700;
+
+    letter-spacing: -.03em;
+}
+
+
+.info-panel > p {
+    margin:
+        8px 0 18px;
+
+    color: #777;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+
+/* =====================================================
+   MINIMIZAR
+===================================================== */
+
+.panel-toggle {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    width: 30px;
+    height: 30px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #f1f1f1;
+
+    color: #555;
+
+    font-size: 18px;
+
+    line-height: 30px;
+
+    cursor: pointer;
+}
+
+
+.panel-toggle:hover {
+    background: #e7e7e7;
+}
+
+
+/* =====================================================
+   RESTAURAR
+===================================================== */
+
+.show-panel {
+    position: fixed;
+
+    z-index: 101;
+
+    top: 20px;
+    right: 20px;
+
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .96
+        );
+
+    color: #222;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 10px 30px
+        rgba(
+            0,
+            0,
+            0,
+            .12
+        );
+
+    opacity: 0;
+
+    transform:
+        scale(.8);
+
+    pointer-events:
+        none;
+
+    transition: .2s ease;
+}
+
+
+.show-panel.visible {
+    opacity: 1;
+
+    transform:
+        scale(1);
+
+    pointer-events:
+        auto;
+}
+
+
+/* =====================================================
+   DIMENSIONES
+===================================================== */
+
+.dimensions {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding:
+        13px 0;
+
+    border-top:
+        1px solid #ededed;
+
+    border-bottom:
+        1px solid #ededed;
+
+    font-size: 10px;
+
+    color: #555;
+}
+
+
+.dimensions div {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    gap: 12px;
+}
+
+
+.dimensions strong {
+    color: #171717;
+
+    font-weight: 700;
+}
+
+
+/* =====================================================
+   ELEMENTO SELECCIONADO
+===================================================== */
+
+.selected-element {
+    padding-top: 14px;
+}
+
+
+.selected-element[hidden] {
+    display:
+        none !important;
+}
+
+
+.section-title {
+    margin-bottom: 8px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: .08em;
+
+    color: #777;
+}
+
+
+.selected-element h2 {
+    margin:
+        0 0 4px;
+
+    font-size: 15px;
+
+    line-height: 1.2;
+}
+
+
+#selectedShortTitle {
+    margin-bottom: 7px;
+
+    font-size: 10px;
+
+    color: #777;
+}
+
+
+#selectedDescription {
+    margin: 0;
+
+    font-size: 10px;
+
+    line-height: 1.45;
+
+    color: #555;
+}
+
+
+/* =====================================================
+   LISTA HOTSPOTS
+===================================================== */
+
+.points-section {
+    margin-top: 17px;
+
+    max-height: 48vh;
+
+    overflow-y: auto;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        #d4d4d4
+        transparent;
+}
+
+
+.points-section[hidden] {
+    display:
+        none !important;
+}
+
+
+#pointsList {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.viewer-point-item {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        25px
+        1fr
+        12px;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding:
+        7px 6px;
+
+    border: 0;
+
+    border-radius: 7px;
+
+    background:
+        transparent;
+
+    text-align: left;
+
+    color: #222;
+
+    cursor: pointer;
+}
+
+
+.viewer-point-item:hover {
+    background: #f3f3f3;
+}
+
+
+.viewer-point-item.is-selected {
+    background: #f0f0f0;
+
+    box-shadow:
+        inset 3px 0 0 #111;
+}
+
+
+.viewer-point-item.is-selected .viewer-point-number {
+    background: #111;
+
+    transform: scale(1.06);
+}
+
+
+.viewer-point-item.is-selected .viewer-point-text strong {
+    color: #111;
+}
+
+
+.viewer-point-state {
+    width: 22px;
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: transparent;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        transform .18s ease;
+}
+
+
+.viewer-point-item.is-selected .viewer-point-state {
+    background: #111;
+
+    color: #fff;
+
+    transform: scale(1);
+}
+
+
+.viewer-point-number {
+    width: 22px;
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #111;
+
+    color: #fff;
+
+    font-size: 9px;
+
+    font-weight: 700;
+}
+
+
+.viewer-point-text {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+
+.viewer-point-text strong {
+    font-size: 10px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.viewer-point-text small {
+    font-size: 9px;
+
+    color: #888;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.viewer-point-arrow {
+    color: #aaa;
+
+    font-size: 16px;
+}
+
+
+/* =====================================================
+   HOTSPOTS 3D
+===================================================== */
+
+.viewer-hotspot-label {
+    display: none !important;
+
+    pointer-events:
+        none;
+
+    white-space:
+        nowrap;
+
+    padding:
+        7px 11px;
+
+    border-radius:
+        9px;
+
+    background:
+        rgba(
+            18,
+            18,
+            18,
+            .94
+        );
+
+    color: #fff;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 7px 22px
+        rgba(
+            0,
+            0,
+            0,
+            .20
+        );
+}
+
+
+/* =====================================================
+   POPUP HOTSPOT
+===================================================== */
+
+.hotspot-popup {
+    display: none !important;
+
+    position: fixed;
+
+    z-index: 1000;
+
+    width: 275px;
+
+    display: flex;
+
+    gap: 11px;
+
+    padding:
+        13px 14px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .97
+        );
+
+    border:
+        1px solid
+        rgba(
+            0,
+            0,
+            0,
+            .07
+        );
+
+    border-radius:
+        13px;
+
+    box-shadow:
+        0 18px 50px
+        rgba(
+            0,
+            0,
+            0,
+            .18
+        );
+
+    backdrop-filter:
+        blur(12px);
+
+    -webkit-backdrop-filter:
+        blur(12px);
+
+    opacity: 0;
+
+    transform:
+        translateY(8px)
+        scale(.97);
+
+    pointer-events:
+        none;
+
+    transition:
+        opacity .18s ease,
+        transform .18s ease;
+}
+
+
+.hotspot-popup.visible {
+    opacity: 1;
+
+    transform:
+        translateY(0)
+        scale(1);
+
+    pointer-events:
+        auto;
+}
+
+
+.hotspot-popup-number {
+    width: 28px;
+    height: 28px;
+
+    flex:
+        0 0 28px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #111;
+
+    color: #fff;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+.hotspot-popup-content {
+    min-width: 0;
+
+    padding-right:
+        10px;
+}
+
+
+.hotspot-popup-title {
+    margin-bottom: 2px;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    color: #111;
+}
+
+
+.hotspot-popup-short {
+    margin-bottom: 6px;
+
+    font-size: 10px;
+
+    color: #777;
+}
+
+
+.hotspot-popup-description {
+    font-size: 11px;
+
+    line-height: 1.45;
+
+    color: #444;
+}
+
+
+.hotspot-popup-close {
+    position: absolute;
+
+    top: 7px;
+    right: 7px;
+
+    width: 22px;
+    height: 22px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #f0f0f0;
+
+    color: #555;
+
+    font-size: 15px;
+
+    line-height: 22px;
+
+    cursor: pointer;
+}
+
+
+.hotspot-popup-close:hover {
+    background: #e4e4e4;
+}
+
+
+/* =====================================================
+   CONTROLES
+===================================================== */
+
+.viewer-controls {
+    position: fixed;
+
+    z-index: 200;
+
+    left: 50%;
+    bottom: 17px;
+
+    transform:
+        translateX(-50%);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 2px;
+
+    padding:
+        6px 8px;
+
+    background:
+        rgba(
+            22,
+            22,
+            22,
+            .94
+        );
+
+    border-radius:
+        12px;
+
+    box-shadow:
+        0 10px 35px
+        rgba(
+            0,
+            0,
+            0,
+            .22
+        );
+
+    backdrop-filter:
+        blur(12px);
+
+    -webkit-backdrop-filter:
+        blur(12px);
+}
+
+
+.viewer-controls button {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding:
+        7px 10px;
+
+    border: 0;
+
+    border-radius: 7px;
+
+    background:
+        transparent;
+
+    color: #fff;
+
+    font-size: 10px;
+
+    cursor: pointer;
+
+    opacity: .85;
+
+    transition:
+        background .15s ease,
+        opacity .15s ease;
+}
+
+
+.viewer-controls button:hover {
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .10
+        );
+
+    opacity: 1;
+}
+
+
+.viewer-controls button span {
+    font-size: 9px;
+}
+
+
+.viewer-controls button:not(:last-child)::after {
+    content: "";
+
+    width: 1px;
+    height: 15px;
+
+    margin-left: 5px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .14
+        );
+}
+
+
+/* =====================================================
+   PANEL DE MEDICIÓN ACTIVA
+===================================================== */
+
+.measurement-panel {
+    position: fixed;
+
+    z-index: 500;
+
+    left: 50%;
+    bottom: 82px;
+
+    transform:
+        translateX(-50%)
+        translateY(12px);
+
+    width:
+        min(
+            320px,
+            calc(100vw - 30px)
+        );
+
+    padding: 16px;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            .82
+        );
+
+    border-radius: 14px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .96
+        );
+
+    box-shadow:
+        0 18px 55px
+        rgba(
+            0,
+            0,
+            0,
+            .20
+        );
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+
+    opacity: 0;
+
+    visibility:
+        hidden;
+
+    pointer-events:
+        none;
+
+    transition:
+        opacity .18s ease,
+        transform .18s ease,
+        visibility .18s ease;
+}
+
+
+.measurement-panel.visible {
+    opacity: 1;
+
+    visibility:
+        visible;
+
+    pointer-events:
+        auto;
+
+    transform:
+        translateX(-50%)
+        translateY(0);
+}
+
+
+.measurement-panel-header {
+    display: flex;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap: 12px;
+}
+
+
+.measurement-panel-header small {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: .14em;
+
+    color: #858585;
+}
+
+
+.measurement-panel-header strong {
+    display: block;
+
+    font-size: 25px;
+
+    line-height: 1;
+
+    color: #111;
+}
+
+
+.measurement-panel-header button {
+    width: 26px;
+    height: 26px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #eeeeee;
+
+    color: #555;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+
+.measurement-panel-header button:hover {
+    background: #e2e2e2;
+}
+
+
+.measurement-panel-info {
+    margin-top: 13px;
+
+    padding-top: 12px;
+
+    border-top:
+        1px solid #e8e8e8;
+}
+
+
+.measurement-panel-info span {
+    display: block;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+
+    color: #666;
+}
+
+
+/* =====================================================
+   ADMINISTRADOR DE MEDICIONES
+===================================================== */
+
+.measurement-manager {
+    position: fixed;
+
+    z-index: 600;
+
+    left: 20px;
+    bottom: 78px;
+
+    width: 285px;
+
+    padding: 15px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .97
+        );
+
+    border:
+        1px solid
+        rgba(
+            0,
+            0,
+            0,
+            .07
+        );
+
+    border-radius:
+        14px;
+
+    box-shadow:
+        0 18px 55px
+        rgba(
+            0,
+            0,
+            0,
+            .18
+        );
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+
+    opacity: 0;
+
+    visibility:
+        hidden;
+
+    pointer-events:
+        none;
+
+    transform:
+        translateY(10px)
+        scale(.97);
+
+    transition:
+        opacity .18s ease,
+        visibility .18s ease,
+        transform .18s ease;
+}
+
+
+.measurement-manager.visible {
+    opacity: 1;
+
+    visibility:
+        visible;
+
+    pointer-events:
+        auto;
+
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+.measurement-manager-header {
+    padding-bottom:
+        11px;
+
+    border-bottom:
+        1px solid #ededed;
+}
+
+
+.measurement-manager-header small {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: .14em;
+
+    color: #858585;
+}
+
+
+.measurement-manager-header strong {
+    display: block;
+
+    font-size: 13px;
+
+    color: #171717;
+}
+
+
+/* =====================================================
+   LISTA MEDICIONES
+===================================================== */
+
+.measurement-list {
+    display: flex;
+
+    flex-direction:
+        column;
+
+    gap: 5px;
+
+    max-height:
+        220px;
+
+    margin-top: 10px;
+
+    overflow-y: auto;
+}
+
+
+.measurement-item {
+    display: flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap: 10px;
+
+    padding:
+        8px;
+
+    border:
+        1px solid #eeeeee;
+
+    border-radius:
+        9px;
+
+    background:
+        #fafafa;
+}
+
+
+.measurement-item-info {
+    min-width: 0;
+
+    display: flex;
+
+    align-items:
+        center;
+
+    gap: 8px;
+}
+
+
+.measurement-item-number {
+    width: 25px;
+    height: 25px;
+
+    flex:
+        0 0 25px;
+
+    display: flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        7px;
+
+    background:
+        #151515;
+
+    color:
+        #fff;
+
+    font-size:
+        9px;
+
+    font-weight:
+        700;
+}
+
+
+.measurement-item-title {
+    font-size:
+        10px;
+
+    font-weight:
+        700;
+
+    color:
+        #222;
+}
+
+
+.measurement-item-distance {
+    display: block;
+
+    margin-top:
+        2px;
+
+    font-size:
+        10px;
+
+    color:
+        #777;
+}
+
+
+.measurement-item-delete {
+    width: 25px;
+    height: 25px;
+
+    flex:
+        0 0 25px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius:
+        50%;
+
+    background:
+        #eeeeee;
+
+    color:
+        #666;
+
+    font-size:
+        16px;
+
+    line-height:
+        25px;
+
+    cursor: pointer;
+}
+
+
+.measurement-item-delete:hover {
+    background:
+        #dedede;
+
+    color:
+        #111;
+}
+
+
+.measurement-delete-all {
+    width: 100%;
+
+    margin-top:
+        10px;
+
+    padding:
+        9px 12px;
+
+    border: 0;
+
+    border-radius:
+        8px;
+
+    background:
+        #151515;
+
+    color:
+        #fff;
+
+    font-size:
+        10px;
+
+    font-weight:
+        600;
+
+    cursor:
+        pointer;
+}
+
+
+.measurement-delete-all:hover {
+    background:
+        #303030;
+}
+
+
+/* =====================================================
+   ETIQUETA DE MEDICIÓN
+===================================================== */
+
+.measurement-label {
+    min-width:
+        64px;
+
+    padding:
+        5px 8px;
+
+    border-radius:
+        7px;
+
+    background:
+        rgba(
+            20,
+            20,
+            20,
+            .94
+        );
+
+    color:
+        #fff;
+
+    font-size:
+        10px;
+
+    font-weight:
+        700;
+
+    text-align:
+        center;
+
+    white-space:
+        nowrap;
+
+    box-shadow:
+        0 6px 20px
+        rgba(
+            0,
+            0,
+            0,
+            .20
+        );
+
+    transform:
+        translate(
+            -50%,
+            -50%
+        );
+}
+
+
+/* =====================================================
+   AYUDA
+===================================================== */
+
+.viewer-help {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    padding: 24px;
+
+    background:
+        rgba(
+            12,
+            14,
+            18,
+            .42
+        );
+
+    backdrop-filter:
+        blur(8px);
+
+    -webkit-backdrop-filter:
+        blur(8px);
+
+    opacity: 0;
+
+    visibility:
+        hidden;
+
+    pointer-events:
+        none;
+
+    transition:
+        opacity 180ms ease,
+        visibility 180ms ease;
+}
+
+
+.viewer-help.visible {
+    opacity: 1;
+
+    visibility:
+        visible;
+
+    pointer-events:
+        auto;
+}
+
+
+.viewer-help-card {
+    position: relative;
+
+    width:
+        min(
+            620px,
+            100%
+        );
+
+    max-height:
+        calc(
+            100vh - 48px
+        );
+
+    overflow-y:
+        auto;
+
+    padding: 30px;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            .76
+        );
+
+    border-radius:
+        20px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .96
+        );
+
+    box-shadow:
+        0 24px 80px
+        rgba(
+            0,
+            0,
+            0,
+            .22
+        );
+
+    transform:
+        translateY(12px)
+        scale(.98);
+
+    transition:
+        transform 180ms ease;
+}
+
+
+.viewer-help.visible
+.viewer-help-card {
+
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+.viewer-help-close {
+    position: absolute;
+
+    top: 15px;
+    right: 15px;
+
+    width: 30px;
+    height: 30px;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background:
+        #eeeeee;
+
+    color:
+        #555;
+
+    font-size:
+        20px;
+
+    cursor:
+        pointer;
+}
+
+
+.viewer-help-close:hover {
+    background:
+        #e3e3e3;
+}
+
+
+.viewer-help-kicker {
+    margin-bottom:
+        8px;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        .16em;
+
+    color:
+        #7a7f87;
+}
+
+
+.viewer-help-card h2 {
+    margin:
+        0;
+
+    font-size:
+        25px;
+
+    line-height:
+        1.1;
+
+    color:
+        #15171b;
+}
+
+
+.viewer-help-intro {
+    max-width:
+        520px;
+
+    margin:
+        10px 0 22px;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.5;
+
+    color:
+        #666;
+}
+
+
+.viewer-help-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap:
+        10px;
+}
+
+
+.viewer-help-grid > div {
+    padding:
+        13px;
+
+    border:
+        1px solid #e8e8e8;
+
+    border-radius:
+        11px;
+
+    background:
+        #fafafa;
+}
+
+
+.viewer-help-grid strong {
+    display:
+        block;
+
+    margin-bottom:
+        4px;
+
+    font-size:
+        11px;
+
+    color:
+        #171717;
+}
+
+
+.viewer-help-grid span {
+    display:
+        block;
+
+    font-size:
+        10px;
+
+    line-height:
+        1.45;
+
+    color:
+        #777;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (
+    max-width: 700px
+) {
+
+    .info-panel {
+
+        top:
+            12px;
+
+        right:
+            12px;
+
+        width:
+            260px;
+    }
+
+
+    .viewer-controls {
+
+        bottom:
+            10px;
+
+        max-width:
+            calc(
+                100vw - 20px
+            );
+
+        overflow-x:
+            auto;
+    }
+
+
+    .viewer-controls button span {
+
+        display:
+            none;
+    }
+
+
+    .viewer-controls button {
+
+        padding:
+            8px;
+    }
+
+
+    .hotspot-popup {
+
+        width:
+            250px;
+    }
+
+
+    .measurement-panel {
+
+        left:
+            50%;
+
+        bottom:
+            68px;
+    }
+
+
+    .measurement-manager {
+
+        left:
+            12px;
+
+        bottom:
+            68px;
+
+        width:
+            270px;
+    }
+
+
+    .viewer-help {
+
+        padding:
+            15px;
+    }
+
+
+    .viewer-help-card {
+
+        max-height:
+            calc(
+                100vh - 30px
+            );
+
+        padding:
+            24px 20px;
+    }
+
+
+    .viewer-help-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+}
+
+/* =====================================================
+   ELEMENTOS INTERACTIVOS: SELECCION LIMPIA
+===================================================== */
+
+.viewer-hotspot-label,
+.admin-hotspot-label {
+    display: none !important;
+}
+
+.viewer-point-item.is-selected {
+    background: #eeeeee;
+    box-shadow: inset 3px 0 0 #111;
+}
+
+.viewer-point-item.is-selected .viewer-point-number {
+    background: #111;
+    color: #fff;
+}
+
+.viewer-point-item.is-selected .viewer-point-text strong {
+    font-weight: 800;
+}
+
+.viewer-point-item.is-selected .viewer-point-state {
+    background: #111;
+    color: #fff;
+}
+
+
+/* =====================================================
+   PREVISUALIZACIÓN DE CAPA PARA HOTSPOTS
+===================================================== */
+
+#adminViewer.placing-hotspot,
+#adminViewer.placing-hotspot canvas {
+    cursor: crosshair !important;
+}
+
+#adminViewer.placing-hotspot {
+    outline: 2px solid rgba(43, 124, 255, .16);
+    outline-offset: -2px;
+}

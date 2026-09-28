@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Universal Stand Viewer - Admin
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./admin.css"
+    >
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+
+        /* =====================================================
+           PROYECTOS
+        ====================================================== */
+            
+        .project-manager {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 22px;
+            padding: 18px;
+            border: 1px solid #e4e4e4;
+            border-radius: 14px;
+            background: #fafafa;
+        }
+
+        .project-manager label {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .project-manager select {
+            width: 100%;
+            min-height: 44px;
+            padding: 0 12px;
+            border: 1px solid #d8d8d8;
+            border-radius: 9px;
+            background: #fff;
+            font: inherit;
+        }
+
+        .project-manager button {
+            min-height: 44px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 9px;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+        }
+
+        #newProject {
+            background: #111;
+            color: #fff;
+        }
+
+        #deleteProject {
+            background: #ededed;
+            color: #222;
+        }
+
+        .project-link-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #f2f2f2;
+        }
+
+        .project-link-box span {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .project-link-box button {
+            flex-shrink: 0;
+            min-height: 34px;
+            padding: 0 12px;
+            border: 0;
+            border-radius: 7px;
+            background: #fff;
+            cursor: pointer;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .project-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+
+        /* =====================================================
+           SKP → GLB
+        ====================================================== */
+
+        .skp-upload {
+            margin-top: 18px;
+            padding: 18px;
+            border: 1px solid #e4e4e4;
+            border-radius: 14px;
+            background: #fafafa;
+        }
+
+        .skp-upload h2 {
+            margin: 0 0 8px;
+            font-size: 18px;
+        }
+
+        .skp-upload p {
+            margin: 0 0 16px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .skp-upload-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skp-upload-controls input[type="file"] {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        #uploadSkp {
+            min-height: 42px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 9px;
+            background: #111;
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+        }
+
+        #uploadSkp:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+
+        .skp-upload-status {
+            margin-top: 12px;
+            min-height: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+
+        /* =====================================================
+           NAVEGACIÓN
+        ====================================================== */
+
+        .admin-viewer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 14px 0 8px;
+        }
+
+        .admin-viewer-actions button {
+            min-height: 40px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        #saveNavigationStart {
+            background: #111;
+            color: #fff;
+        }
+
+        #applyNavigationStart {
+            background: #e7e7e7;
+            color: #222;
+        }
+
+        #resetNavigationStart {
+            background: #ededed;
+            color: #222;
+        }
+
+        .navigation-status {
+            margin: 0 0 12px;
+            font-size: 12px;
+            color: #666;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ====================================================== */
+
+        @media (max-width: 760px) {
+
+            .project-manager {
+                grid-template-columns: 1fr;
+            }
+
+            .project-link-box {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .project-link-box span {
+                width: 100%;
+            }
+
+            .skp-upload-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .skp-upload-controls input[type="file"] {
+                min-width: 0;
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+    <style>
+
+    .project-library-card {
+        overflow: hidden;
+    }
+
+
+    .project-library-toolbar {
+        margin-top: 18px;
+    }
+
+
+    .project-library-toolbar input {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid #d8d8d8;
+        border-radius: 9px;
+        background: #fff;
+        font: inherit;
+        box-sizing: border-box;
+        outline: none;
+    }
+
+
+    .project-library-toolbar input:focus {
+        border-color: #999;
+    }
+
+
+    .project-library-status {
+        margin-top: 12px;
+        color: #666;
+        font-size: 12px;
+    }
+
+
+    .project-library {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+
+    .project-library-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 18px;
+        border: 1px solid #e4e4e4;
+        border-radius: 14px;
+        background: #fff;
+        transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+
+    .project-library-item:hover {
+        border-color: #cfcfcf;
+        box-shadow:
+            0 4px 18px rgba(
+                0,
+                0,
+                0,
+                0.05
+            );
+    }
+
+
+    .project-library-item.is-active {
+        border-color: #111;
+    }
+
+
+    .project-library-main {
+        min-width: 0;
+        flex: 1;
+    }
+
+
+    .project-library-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+
+    .project-library-title-row h3 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+
+    .project-library-title-row p {
+        margin: 5px 0 0;
+        color: #555;
+        font-size: 14px;
+    }
+
+
+    .project-library-badge {
+        flex-shrink: 0;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #111;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+
+    .project-library-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+
+    .project-library-meta span {
+        padding: 6px 9px;
+        border-radius: 7px;
+        background: #f3f3f3;
+        color: #444;
+        font-size: 11px;
+    }
+
+
+    .project-library-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 12px;
+        color: #666;
+        font-size: 11px;
+    }
+
+
+    .project-library-info strong {
+        color: #222;
+    }
+
+
+    .project-library-date {
+        margin-top: 10px;
+        color: #888;
+        font-size: 11px;
+    }
+
+
+    .project-library-actions {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+
+    .project-library-actions button {
+        min-width: 100px;
+        min-height: 38px;
+        padding: 0 13px;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+
+    .project-library-open {
+        background: #111;
+        color: #fff;
+    }
+
+
+    .project-library-delete {
+        background: #f0f0f0;
+        color: #222;
+    }
+
+
+    .project-library-delete:hover {
+        background: #e4e4e4;
+    }
+
+
+    .project-library-empty {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 35px 20px;
+        border: 1px dashed #d8d8d8;
+        border-radius: 12px;
+        text-align: center;
+        color: #777;
+    }
+
+
+    .project-library-empty strong {
+        color: #222;
+        font-size: 14px;
+    }
+
+
+    .project-library-empty span {
+        font-size: 12px;
+    }
+
+
+    #refreshProjectLibrary {
+        min-height: 40px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 8px;
+        background: #111;
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+
+    #refreshProjectLibrary:disabled {
+        opacity: 0.5;
+        cursor: wait;
+    }
+
+
+    @media (max-width: 760px) {
+
+        .project-library-item {
+            flex-direction: column;
+        }
+
+        .project-library-actions {
+            flex-direction: row;
+        }
+
+        .project-library-actions button {
+            flex: 1;
+        }
+
+    }
+
+</style>
+
+
+    <style>
+
+        .hotspot-editor {
+            margin-top: 16px;
+            padding: 18px;
+            border: 1px solid #e4e4e4;
+            border-radius: 14px;
+            background: #fafafa;
+        }
+
+        .hotspot-editor[hidden] {
+            display: none !important;
+        }
+
+        .hotspot-editor h3 {
+            margin: 0 0 16px;
+            font-size: 16px;
+        }
+
+        .hotspot-editor label {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .hotspot-editor input,
+        .hotspot-editor textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d8d8d8;
+            border-radius: 8px;
+            background: #fff;
+            font: inherit;
+            font-weight: 400;
+            outline: none;
+        }
+
+        .hotspot-editor input:focus,
+        .hotspot-editor textarea:focus {
+            border-color: #999;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <header class="admin-header">
+
+        <div>
+
+            <strong>
+                UNIVERSAL STAND
+            </strong>
+
+            <span>
+                Administración
+            </span>
+
+        </div>
+
+
+
+    </header>
+
+
+    <main class="admin-layout">
+
+        <section class="admin-card">
+
+            <div class="admin-section-header">
+
+                <div>
+
+                    <h2>
+                        Modelo 3D
+                    </h2>
+
+                    <p>
+                        Cargá el archivo SketchUp del stand.
+                        Se convertirá automáticamente a GLB
+                        y quedará asociado a este proyecto.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="skp-upload">
+
+                <label
+                    class="skp-file-label"
+                    for="skpFile"
+                >
+                    Archivo SKP
+
+                    <input
+                        id="skpFile"
+                        type="file"
+                        accept=".skp"
+                    >
+
+                </label>
+
+
+                <button
+                    id="uploadSkp"
+                    type="button"
+                >
+                    Cargar modelo 3D
+                </button>
+
+
+                <div
+                    id="skpUploadStatus"
+                    class="skp-upload-status"
+                >
+                    Ningún archivo seleccionado.
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROYECTOS
+        ================================================== -->
+
+        <section class="admin-card project-library-card">
+
+            <div class="admin-section-header">
+
+                <div>
+
+                    <h2>
+                        Todos los proyectos
+                    </h2>
+
+                    <p>
+                        Historial de stands creados y guardados.
+                    </p>
+
+                </div>
+
+                <button
+                    id="refreshProjectLibrary"
+                    type="button"
+                >
+                    Actualizar
+                </button>
+
+            </div>
+
+
+            <div class="project-library-toolbar">
+
+                <input
+                    id="projectLibrarySearch"
+                    type="search"
+                    placeholder="Buscar cliente, proyecto o slug..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <div
+                id="projectLibraryStatus"
+                class="project-library-status"
+            >
+                Cargando proyectos...
+            </div>
+
+
+            <div
+                id="projectLibrary"
+                class="project-library"
+            ></div>
+
+        </section>
+
+
+        <section class="admin-card">
+
+            <h1>
+                Proyectos
+            </h1>
+
+
+            <div class="project-manager">
+
+                <label>
+
+                    Proyecto activo
+
+                    <select
+                        id="projectSelector"
+                    ></select>
+
+                </label>
+
+
+                <button
+                    id="newProject"
+                    type="button"
+                >
+                    + Nuevo proyecto
+                </button>
+
+
+                <button
+                    id="deleteProject"
+                    type="button"
+                >
+                    Eliminar proyecto
+                </button>
+
+            </div>
+
+
+            <div class="project-link-box">
+
+                <span
+                    id="projectPublicLink"
+                >
+                    -
+                </span>
+
+
+                <button
+                    id="copyProjectLink"
+                    type="button"
+                >
+                    Copiar enlace
+                </button>
+
+            </div>
+
+
+            <div
+                id="projectStatus"
+                class="project-status"
+            >
+                Proyecto cargado.
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             INFORMACIÓN DEL STAND
+        ================================================== -->
+
+        <section class="admin-card">
+
+            <h1>
+                Información del stand
+            </h1>
+
+
+            <div class="admin-form-grid">
+
+                <label>
+
+                    Cliente
+
+                    <input
+                        id="client"
+                        type="text"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Proyecto
+
+                    <input
+                        id="project"
+                        type="text"
+                    >
+
+                </label>
+
+
+        <label>
+
+                    Ancho
+
+                    <input
+                        id="width"
+                        type="number"
+                        step="0.01"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Profundidad
+
+                    <input
+                        id="depth"
+                        type="number"
+                        step="0.01"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Altura
+
+                    <input
+                        id="height"
+                        type="number"
+                        step="0.01"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Superficie
+
+                    <input
+                        id="surface"
+                        type="number"
+                        step="0.01"
+                        readonly
+                    >
+
+                </label>
+
+
+                <label class="full">
+
+                    Descripción
+
+                    <textarea
+                        id="description"
+                        rows="4"
+                    ></textarea>
+
+                </label>
+
+
+                <label class="full">
+
+                    Slug
+
+                    <input
+                        id="slug"
+                        type="text"
+                    >
+
+                </label>
+
+            </div>
+
+
+            <div class="admin-actions">
+
+                <button
+                    id="saveStand"
+                    type="button"
+                >
+                    Guardar stand
+                </button>
+
+
+                <button
+                    id="resetStand"
+                    type="button"
+                >
+                    Restablecer
+                </button>
+
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ELEMENTOS INTERACTIVOS
+        ================================================== -->
+
+        <section class="admin-card">
+
+            <div class="admin-section-header">
+
+                <div>
+
+                    <h2>
+                        Elementos interactivos
+                    </h2>
+
+                    <p>
+                        Vinculá cada elemento a una parte/capa real del modelo.
+                        Primero seleccionás la malla y después cargás su información.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="addHotspot"
+                    type="button"
+                >
+                    + Agregar elemento
+                </button>
+
+            </div>
+
+
+            <div
+                id="hotspotStatus"
+                class="hotspot-status"
+            >
+                Cargando modelo...
+            </div>
+
+
+            <div
+                id="hotspotEditor"
+                class="hotspot-editor"
+                hidden
+            >
+
+                <h3>
+                    Editar elemento
+                </h3>
+
+
+                <label>
+
+                    Nombre
+
+                    <input
+                        id="hotspotName"
+                        type="text"
+                        placeholder="Ej. Pantalla LED"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Título corto
+
+                    <input
+                        id="hotspotShortTitle"
+                        type="text"
+                        placeholder="Ej. Pantalla 2x2"
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Descripción
+
+                    <textarea
+                        id="hotspotDescription"
+                        rows="4"
+                        placeholder="Descripción del elemento..."
+                    ></textarea>
+
+                </label>
+
+
+                <div class="admin-actions">
+
+                    <button
+                        id="saveHotspot"
+                        type="button"
+                    >
+                        Guardar elemento
+                    </button>
+
+
+                    <button
+                        id="cancelHotspot"
+                        type="button"
+                    >
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="hotspotList"
+                class="hotspot-list"
+            ></div>
+
+        </section>
+
+
+        <!-- =================================================
+             MODELO 3D
+        ================================================== -->
+
+        <section class="admin-card admin-viewer-card">
+
+            <h2>
+                Modelo 3D
+            </h2>
+
+
+            <p id="viewerInstruction">
+                Hacé clic en "Agregar elemento" y luego directamente sobre la parte/capa del modelo que querés vincular.
+            </p>
+
+
+            <div class="admin-viewer-actions">
+
+                <button
+                    id="saveNavigationStart"
+                    type="button"
+                >
+                    Guardar vista actual como inicio
+                </button>
+
+
+                <button
+                    id="applyNavigationStart"
+                    type="button"
+                >
+                    Ver vista inicial guardada
+                </button>
+
+                <button
+                    id="resetNavigationStart"
+                    type="button"
+                >
+                    Volver a vista automática
+                </button>
+
+            </div>
+
+
+            <p
+                id="navigationStatus"
+                class="navigation-status"
+            >
+                Acomodá el visor con el mouse y guardá la vista
+                que quieras como inicio del recorrido.
+            </p>
+
+
+            <div
+                id="adminViewer"
+                class="admin-viewer"
+            ></div>
+
+        </section>
+
+
+    </main>
+
+
+    <script
+        type="module"
+        src="./admin.js"
+    ></script>
+
+
+    <script
+        type="module"
+        src="./admin-navigation.js"
+    ></script>
+
+
+    <script
+        type="module"
+        src="./skp-upload.js"
+    ></script>
+
+
+    <script
+        type="module"
+        src="./admin-projects.js"
+    ></script>
+
+</body>
+
+</html>

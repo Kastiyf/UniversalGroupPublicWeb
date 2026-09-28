@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Universal Stand Viewer</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+        }
+    }
+    </script>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         VISOR 3D
+    ====================================================== -->
+
+    <main
+        id="viewer3d"
+        class="viewer3d"
+    ></main>
+
+
+    <!-- =====================================================
+         PANEL DE INFORMACIÓN
+    ====================================================== -->
+
+    <aside
+        id="infoPanel"
+        class="info-panel"
+    >
+
+        <button
+            id="togglePanel"
+            class="panel-toggle"
+            type="button"
+            aria-label="Minimizar información"
+        >
+            −
+        </button>
+
+
+        <div class="panel-brand">
+            UNIVERSAL GROUP
+        </div>
+
+
+        <h1 id="standTitle">
+            Cooprolanda
+        </h1>
+
+
+        <p id="standDescription">
+            Visualización interactiva del proyecto.
+        </p>
+
+
+        <div class="dimensions">
+
+            <div>
+                <span>Ancho</span>
+
+                <strong id="dimensionAncho">
+                    7.00 m
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Profundidad</span>
+
+                <strong id="dimensionProfundidad">
+                    5.00 m
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Altura</span>
+
+                <strong id="dimensionAltura">
+                    3.50 m
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Superficie</span>
+
+                <strong id="dimensionSuperficie">
+                    35.00 m²
+                </strong>
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             ELEMENTO SELECCIONADO
+        ================================================== -->
+
+        <div
+            id="selectedElement"
+            class="selected-element"
+            hidden
+        >
+
+            <div class="section-title">
+                ELEMENTO SELECCIONADO
+            </div>
+
+
+            <h2 id="selectedTitle">
+                -
+            </h2>
+
+
+            <div id="selectedShortTitle">
+                -
+            </div>
+
+
+            <p id="selectedDescription">
+                -
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             ELEMENTOS DEL PROYECTO
+        ================================================== -->
+
+        <section
+            id="pointsSection"
+            class="points-section"
+            hidden
+        >
+
+            <div class="section-title">
+                ELEMENTOS DEL PROYECTO
+            </div>
+
+
+            <div id="pointsList"></div>
+
+        </section>
+
+    </aside>
+
+
+    <!-- =====================================================
+         RESTAURAR PANEL
+    ====================================================== -->
+
+    <button
+        id="showPanel"
+        class="show-panel"
+        type="button"
+        aria-label="Mostrar información"
+    >
+        i
+    </button>
+
+
+    <!-- =====================================================
+         CONTROLES
+    ====================================================== -->
+
+    <nav
+        class="viewer-controls"
+        aria-label="Controles del visor"
+    >
+
+        <button
+            id="controlHome"
+            type="button"
+            title="Vista inicial"
+        >
+            ⌂
+            <span>Vista inicial</span>
+        </button>
+
+
+        <button
+            id="controlZoomOut"
+            type="button"
+            title="Alejar"
+        >
+            −
+            <span>Alejar</span>
+        </button>
+
+
+        <button
+            id="controlZoomIn"
+            type="button"
+            title="Acercar"
+        >
+            +
+            <span>Acercar</span>
+        </button>
+
+
+        <button
+            id="controlMeasure"
+            type="button"
+            title="Medir"
+        >
+            ↔
+            <span>Medir</span>
+        </button>
+
+
+        <button
+            id="controlHelp"
+            type="button"
+            title="Controles"
+        >
+            ?
+            <span>Controles</span>
+        </button>
+
+
+        <button
+            id="controlFullscreen"
+            type="button"
+            title="Pantalla completa"
+        >
+            ⛶
+            <span>Pantalla completa</span>
+        </button>
+
+    </nav>
+
+
+    <!-- =====================================================
+         ACCESO DISCRETO A ADMINISTRACIÓN
+    ====================================================== -->
+
+    <a
+        href="./admin/admin.html"
+        class="hidden-admin-access"
+        aria-label="Administración"
+        title="Administración"
+    >
+        ◈
+    </a>
+
+    <style>
+        .hidden-admin-access {
+            position: fixed;
+            right: 10px;
+            bottom: 8px;
+            z-index: 9999;
+
+            width: 18px;
+            height: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: rgba(255, 255, 255, 0.12);
+            text-decoration: none;
+
+            font-size: 10px;
+            line-height: 1;
+
+            opacity: 0.35;
+
+            transition:
+                color 0.2s ease,
+                opacity 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .hidden-admin-access:hover {
+            color: rgba(255, 255, 255, 0.65);
+            opacity: 1;
+            transform: scale(1.15);
+        }
+    </style>
+
+
+    <!-- =====================================================
+         PANEL DE MEDICIÓN
+    ====================================================== -->
+
+    <div
+        id="measurementPanel"
+        class="measurement-panel"
+        aria-hidden="true"
+    >
+
+        <div class="measurement-panel-header">
+
+            <div>
+
+                <small>
+                    MEDICIÓN
+                </small>
+
+                <strong id="measurementValue">
+                    0.00 m
+                </strong>
+
+            </div>
+
+
+            <button
+                id="measurementClose"
+                type="button"
+                aria-label="Cerrar medición"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="measurement-panel-info">
+
+            <span id="measurementStatus">
+                Seleccioná el primer punto.
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ADMINISTRADOR DE MEDICIONES
+         APARECE SOLAMENTE CUANDO EXISTE UNA MEDICIÓN
+    ====================================================== -->
+
+    <div
+        id="measurementManager"
+        class="measurement-manager"
+        aria-hidden="true"
+    >
+
+        <div class="measurement-manager-header">
+
+            <div>
+
+                <small>
+                    MEDICIONES
+                </small>
+
+                <strong>
+                    Distancias del proyecto
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="measurementList"
+            class="measurement-list"
+        ></div>
+
+
+        <button
+            id="measurementDeleteAll"
+            type="button"
+            class="measurement-delete-all"
+        >
+            Eliminar todas las mediciones
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         AYUDA
+    ====================================================== -->
+
+    <div
+        id="viewerHelp"
+        class="viewer-help"
+        aria-hidden="true"
+    >
+
+        <div
+            class="viewer-help-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="viewerHelpTitle"
+        >
+
+            <button
+                id="closeViewerHelp"
+                class="viewer-help-close"
+                type="button"
+                aria-label="Cerrar"
+            >
+                ×
+            </button>
+
+
+            <div class="viewer-help-kicker">
+                NAVEGACIÓN
+            </div>
+
+
+            <h2 id="viewerHelpTitle">
+                Controles del visor
+            </h2>
+
+
+            <p class="viewer-help-intro">
+                Explorá el stand en 3D usando el mouse,
+                el panel lateral y los controles inferiores.
+            </p>
+
+
+            <div class="viewer-help-grid">
+
+                <div>
+                    <strong>
+                        Rotar
+                    </strong>
+
+                    <span>
+                        Arrastrá con el botón izquierdo.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Zoom
+                    </strong>
+
+                    <span>
+                        Usá la rueda del mouse o los botones + y −.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Desplazar
+                    </strong>
+
+                    <span>
+                        Arrastrá con el botón derecho.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Hotspots
+                    </strong>
+
+                    <span>
+                        Seleccioná un elemento numerado
+                        para ver su información.
+                    </span>
+                </div>
+
+
+                <!-- =========================================
+                     MEDICIÓN
+                ========================================== -->
+
+                <div class="viewer-help-measure">
+
+                    <strong>
+                        Medición 3D
+                    </strong>
+
+                    <span>
+                        Activá el botón Medir.
+                        Hacé un clic sobre el primer punto
+                        y otro clic sobre el segundo punto.
+                        La distancia quedará visible en el modelo.
+                    </span>
+
+                </div>
+
+
+                <div>
+                    <strong>
+                        Mediciones múltiples
+                    </strong>
+
+                    <span>
+                        Después de completar una medición,
+                        podés seleccionar otros dos puntos
+                        para crear otra. Las anteriores permanecen.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Eliminar mediciones
+                    </strong>
+
+                    <span>
+                        Cuando exista al menos una medición
+                        aparecerá una ventana donde podés
+                        eliminar una medición o todas.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Vista inicial
+                    </strong>
+
+                    <span>
+                        Restablece la posición inicial
+                        de la cámara.
+                    </span>
+                </div>
+
+
+                <div>
+                    <strong>
+                        Teclado
+                    </strong>
+
+                    <span>
+                        H vuelve a la vista inicial.
+                        + y − controlan el zoom.
+                        Esc cierra ventanas.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         APP
+    ====================================================== -->
+
+    <script
+        type="module"
+        src="./app.js"
+    ></script>
+
+</body>
+
+</html>

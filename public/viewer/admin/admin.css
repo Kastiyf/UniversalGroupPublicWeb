@@ -1,0 +1,1108 @@
+* {
+    box-sizing: border-box;
+}
+
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Inter,
+        Arial,
+        sans-serif;
+
+    background:
+        #f2f2f2;
+
+    color:
+        #171717;
+}
+
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+
+button {
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.admin-header {
+    height: 64px;
+
+    padding:
+        0 28px;
+
+    background:
+        #111;
+
+    color:
+        #fff;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+}
+
+
+.admin-header > div {
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        14px;
+}
+
+
+.admin-header strong {
+    font-size:
+        16px;
+
+    letter-spacing:
+        .04em;
+}
+
+
+.admin-header span {
+    color:
+        #999;
+
+    font-size:
+        13px;
+}
+
+
+.admin-header a {
+    color:
+        #fff;
+
+    text-decoration:
+        none;
+
+    font-size:
+        13px;
+
+    padding:
+        9px 14px;
+
+    border:
+        1px solid #444;
+
+    border-radius:
+        8px;
+
+    transition:
+        .2s ease;
+}
+
+
+.admin-header a:hover {
+    background:
+        #fff;
+
+    color:
+        #111;
+}
+
+
+/* =====================================================
+   LAYOUT
+===================================================== */
+
+.admin-layout {
+    width:
+        min(
+            1400px,
+            calc(100% - 32px)
+        );
+
+    margin:
+        24px auto 40px;
+
+    display:
+        grid;
+
+    grid-template-columns:
+        360px 1fr;
+
+    gap:
+        20px;
+}
+
+
+.admin-card {
+    background:
+        #fff;
+
+    border:
+        1px solid #e4e4e4;
+
+    border-radius:
+        14px;
+
+    padding:
+        22px;
+
+    box-shadow:
+        0 8px 30px
+        rgba(
+            0,
+            0,
+            0,
+            .06
+        );
+}
+
+
+.admin-card h1,
+.admin-card h2,
+.admin-card h3 {
+    margin-top:
+        0;
+}
+
+
+.admin-card h1 {
+    font-size:
+        22px;
+
+    margin-bottom:
+        20px;
+}
+
+
+.admin-card h2 {
+    font-size:
+        18px;
+}
+
+
+.admin-card h3 {
+    font-size:
+        15px;
+
+    margin-bottom:
+        4px;
+}
+
+
+/* =====================================================
+   FORMULARIO
+===================================================== */
+
+.admin-form-grid {
+    display:
+        grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:
+        14px;
+}
+
+
+.admin-form-grid label.full {
+    grid-column:
+        1 / -1;
+}
+
+
+.admin-form-grid label,
+.hotspot-editor label {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        6px;
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    color:
+        #555;
+}
+
+
+input,
+textarea {
+    width:
+        100%;
+
+    border:
+        1px solid #d8d8d8;
+
+    background:
+        #fafafa;
+
+    border-radius:
+        8px;
+
+    padding:
+        10px 11px;
+
+    outline:
+        none;
+
+    color:
+        #151515;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+
+input:focus,
+textarea:focus {
+    border-color:
+        #111;
+
+    background:
+        #fff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(
+            0,
+            0,
+            0,
+            .06
+        );
+}
+
+
+textarea {
+    resize:
+        vertical;
+
+    min-height:
+        90px;
+}
+
+
+input[readonly] {
+    background:
+        #eeeeee;
+
+    color:
+        #555;
+}
+
+
+/* =====================================================
+   BOTONES
+===================================================== */
+
+.admin-actions {
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        8px;
+
+    margin-top:
+        18px;
+}
+
+
+.admin-actions button,
+.admin-section-header > button {
+    border:
+        0;
+
+    border-radius:
+        8px;
+
+    padding:
+        10px 14px;
+
+    background:
+        #111;
+
+    color:
+        #fff;
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    transition:
+        transform .15s ease,
+        opacity .15s ease;
+}
+
+
+.admin-actions button:hover,
+.admin-section-header > button:hover {
+    opacity:
+        .82;
+}
+
+
+.admin-actions button:active,
+.admin-section-header > button:active {
+    transform:
+        translateY(1px);
+}
+
+
+/* =====================================================
+   HOTSPOTS
+===================================================== */
+
+.admin-section-header {
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        flex-start;
+
+    gap:
+        20px;
+
+    margin-bottom:
+        14px;
+}
+
+
+.admin-section-header h2 {
+    margin-bottom:
+        0;
+}
+
+
+.admin-section-header p {
+    margin:
+        4px 0 0;
+
+    color:
+        #777;
+
+    font-size:
+        12px;
+}
+
+
+.admin-section-header > button {
+    white-space:
+        nowrap;
+}
+
+
+.hotspot-status {
+    min-height:
+        38px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    padding:
+        9px 12px;
+
+    border-radius:
+        8px;
+
+    background:
+        #f2f2f2;
+
+    color:
+        #555;
+
+    font-size:
+        12px;
+}
+
+
+/* =====================================================
+   EDITOR
+===================================================== */
+
+.hotspot-editor {
+    margin-top:
+        14px;
+
+    padding:
+        16px;
+
+    background:
+        #f7f7f7;
+
+    border:
+        1px solid #e2e2e2;
+
+    border-radius:
+        10px;
+}
+
+
+.hotspot-editor[hidden] {
+    display:
+        none !important;
+}
+
+
+.editor-header {
+    margin-bottom:
+        12px;
+}
+
+
+.editor-header p {
+    margin:
+        0;
+
+    color:
+        #888;
+
+    font-size:
+        11px;
+}
+
+
+.hotspot-editor label {
+    margin-top:
+        12px;
+}
+
+
+.hotspot-editor .admin-actions {
+    margin-top:
+        14px;
+}
+
+
+/* =====================================================
+   POSICIÓN
+===================================================== */
+
+.editor-position {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    margin-top:
+        14px;
+
+    padding:
+        10px 12px;
+
+    border:
+        1px solid #dedede;
+
+    border-radius:
+        8px;
+
+    background:
+        #fff;
+}
+
+
+.editor-position > div {
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        3px;
+}
+
+
+.editor-position strong {
+    font-size:
+        11px;
+
+    color:
+        #555;
+}
+
+
+.editor-position span {
+    font-family:
+        monospace;
+
+    font-size:
+        10px;
+
+    color:
+        #888;
+}
+
+
+.editor-position button {
+    border:
+        1px solid #d5d5d5;
+
+    background:
+        #fff;
+
+    border-radius:
+        7px;
+
+    padding:
+        7px 10px;
+
+    font-size:
+        11px;
+
+    font-weight:
+        600;
+
+    white-space:
+        nowrap;
+}
+
+
+.editor-position button:hover {
+    background:
+        #eeeeee;
+}
+
+
+/* =====================================================
+   LISTA
+===================================================== */
+
+.hotspot-list {
+    margin-top:
+        16px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        8px;
+}
+
+
+.empty-hotspots {
+    padding:
+        20px;
+
+    text-align:
+        center;
+
+    color:
+        #888;
+
+    font-size:
+        12px;
+
+    border:
+        1px dashed #d5d5d5;
+
+    border-radius:
+        9px;
+}
+
+
+.admin-hotspot-item {
+    display:
+        grid;
+
+    grid-template-columns:
+        34px 1fr auto;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    padding:
+        10px;
+
+    border:
+        1px solid #e4e4e4;
+
+    border-radius:
+        9px;
+
+    background:
+        #fff;
+
+    transition:
+        border-color .2s ease,
+        background .2s ease;
+}
+
+
+.admin-hotspot-item.active {
+    border-color:
+        #111;
+
+    background:
+        #f7f7f7;
+}
+
+
+.admin-hotspot-number {
+    width:
+        28px;
+
+    height:
+        28px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        50%;
+
+    background:
+        #111;
+
+    color:
+        #fff;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+}
+
+
+.admin-hotspot-info {
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        3px;
+}
+
+
+.admin-hotspot-info strong {
+    font-size:
+        12px;
+
+    white-space:
+        nowrap;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+}
+
+
+.admin-hotspot-info small {
+    color:
+        #888;
+
+    font-size:
+        10px;
+
+    white-space:
+        nowrap;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+}
+
+
+.admin-hotspot-actions {
+    display:
+        flex;
+
+    gap:
+        5px;
+}
+
+
+.admin-hotspot-actions button {
+    border:
+        1px solid #ddd;
+
+    background:
+        #fff;
+
+    padding:
+        6px 8px;
+
+    border-radius:
+        6px;
+
+    font-size:
+        10px;
+}
+
+
+.admin-hotspot-actions button:hover {
+    background:
+        #f1f1f1;
+}
+
+
+/* =====================================================
+   VISOR
+===================================================== */
+
+.admin-viewer-card {
+    grid-column:
+        1 / -1;
+}
+
+
+.viewer-header {
+    margin-bottom:
+        12px;
+}
+
+
+.viewer-header h2 {
+    margin-bottom:
+        4px;
+}
+
+
+.viewer-header p {
+    margin:
+        0;
+
+    color:
+        #777;
+
+    font-size:
+        12px;
+}
+
+
+.admin-viewer {
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        620px;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        12px;
+
+    background:
+        #e8e8e8;
+
+    border:
+        1px solid #ddd;
+}
+
+
+.admin-viewer canvas {
+    display:
+        block;
+
+    width:
+        100%;
+
+    height:
+        100%;
+}
+
+
+/* =====================================================
+   COLOCACIÓN
+===================================================== */
+
+.admin-viewer.placing-hotspot {
+    cursor:
+        crosshair;
+}
+
+
+.admin-viewer.placing-hotspot::after {
+    content:
+        "Hacé clic sobre el elemento del modelo";
+
+    position:
+        absolute;
+
+    left:
+        50%;
+
+    top:
+        18px;
+
+    transform:
+        translateX(-50%);
+
+    z-index:
+        20;
+
+    padding:
+        9px 14px;
+
+    border-radius:
+        999px;
+
+    background:
+        #111;
+
+    color:
+        #fff;
+
+    font-size:
+        11px;
+
+    font-weight:
+        600;
+
+    pointer-events:
+        none;
+
+    box-shadow:
+        0 6px 20px
+        rgba(
+            0,
+            0,
+            0,
+            .2
+        );
+}
+
+
+/* =====================================================
+   LABEL ADMIN
+===================================================== */
+
+.admin-hotspot-label {
+    pointer-events:
+        none;
+
+    white-space:
+        nowrap;
+
+    padding:
+        7px 10px;
+
+    border-radius:
+        8px;
+
+    background:
+        rgba(
+            17,
+            17,
+            17,
+            .94
+        );
+
+    color:
+        #fff;
+
+    font-size:
+        11px;
+
+    font-weight:
+        600;
+
+    box-shadow:
+        0 5px 18px
+        rgba(
+            0,
+            0,
+            0,
+            .2
+        );
+}
+
+
+.admin-hotspot-label.selected {
+    outline:
+        2px solid #fff;
+
+    box-shadow:
+        0 0 0 3px
+        #111,
+        0 6px 20px
+        rgba(
+            0,
+            0,
+            0,
+            .25
+        );
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (
+    max-width: 900px
+) {
+
+    .admin-layout {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .admin-viewer-card {
+        grid-column:
+            auto;
+    }
+
+
+    .admin-viewer {
+        height:
+            520px;
+    }
+}
+
+
+@media (
+    max-width: 560px
+) {
+
+    .admin-layout {
+        width:
+            calc(100% - 20px);
+
+        margin:
+            10px auto 25px;
+    }
+
+
+    .admin-card {
+        padding:
+            15px;
+    }
+
+
+    .admin-form-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .admin-form-grid label.full {
+        grid-column:
+            auto;
+    }
+
+
+    .admin-section-header {
+        flex-direction:
+            column;
+    }
+
+
+    .admin-section-header > button {
+        width:
+            100%;
+    }
+
+
+    .admin-viewer {
+        height:
+            420px;
+    }
+
+
+    .editor-position {
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+    }
+
+
+    .editor-position button {
+        width:
+            100%;
+    }
+
+
+    .admin-hotspot-item {
+        grid-template-columns:
+            34px 1fr;
+    }
+
+
+    .admin-hotspot-actions {
+        grid-column:
+            1 / -1;
+
+        justify-content:
+            flex-end;
+    }
+}
