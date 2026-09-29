@@ -27,7 +27,7 @@ const showcase = [
   }
 ];
 
-const VIEWER_URL = '/viewer/index.html?project=demo';
+const VIEWER_URL = '/viewer/index.html?project=enicab-9cwtd';
 
 const socialLinks = {
   instagram: 'https://www.instagram.com/universalgroup.py/',
