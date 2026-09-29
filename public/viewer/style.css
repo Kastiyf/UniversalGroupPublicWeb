@@ -1851,3 +1851,1063 @@ body {
     outline: 2px solid rgba(43, 124, 255, .16);
     outline-offset: -2px;
 }
+/* =====================================================
+   GALERÍA DE RENDERS
+===================================================== */
+
+.renders-gallery-open {
+    position: fixed;
+
+    top: 22px;
+    left: 50%;
+
+    z-index: 300;
+
+    transform:
+        translateX(-50%);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    min-width: 130px;
+
+    padding: 9px 15px;
+
+    border: 1px solid
+        rgba(255,255,255,.16);
+
+    border-radius: 10px;
+
+    background:
+        rgba(20,20,20,.90);
+
+    color: #fff;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 28px
+        rgba(0,0,0,.18);
+
+    backdrop-filter:
+        blur(12px);
+
+    transition:
+        opacity .18s ease,
+        transform .18s ease,
+        background .18s ease;
+}
+
+
+.renders-gallery-open:hover {
+    background:
+        rgba(20,20,20,.98);
+
+    transform:
+        translateX(-50%)
+        translateY(-2px);
+}
+
+
+.renders-gallery-open span {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.renders-gallery-open small {
+    margin-top: 2px;
+
+    color: #aaa;
+
+    font-size: 8px;
+}
+
+
+.renders-gallery-open.is-hidden {
+    display: none;
+}
+
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+.renders-gallery {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 5000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    visibility: hidden;
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity .20s ease,
+        visibility .20s ease;
+}
+
+
+.renders-gallery.is-visible {
+    visibility: visible;
+
+    opacity: 1;
+
+    pointer-events: auto;
+}
+
+
+.renders-gallery-backdrop {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(8,9,11,.78);
+
+    backdrop-filter:
+        blur(12px);
+}
+
+
+.renders-gallery-window {
+    position: relative;
+
+    z-index: 1;
+
+    width:
+        min(
+            1200px,
+            94vw
+        );
+
+    height:
+        min(
+            850px,
+            92vh
+        );
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    border-radius: 18px;
+
+    background:
+        #111;
+
+    box-shadow:
+        0 30px 100px
+        rgba(0,0,0,.45);
+
+    transform:
+        translateY(15px)
+        scale(.98);
+
+    transition:
+        transform .20s ease;
+}
+
+
+.renders-gallery.is-visible
+.renders-gallery-window {
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.renders-gallery-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding:
+        16px 20px;
+
+    border-bottom:
+        1px solid
+        rgba(255,255,255,.08);
+}
+
+
+.renders-gallery-header small {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #777;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: .16em;
+}
+
+
+.renders-gallery-header strong {
+    color: #fff;
+
+    font-size: 14px;
+}
+
+
+.renders-gallery-close {
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.08);
+
+    color: #fff;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+
+.renders-gallery-close:hover {
+    background:
+        rgba(255,255,255,.16);
+}
+
+
+/* =====================================================
+   IMAGEN PRINCIPAL
+===================================================== */
+
+.renders-gallery-main {
+    position: relative;
+
+    flex: 1 1 auto;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px 70px;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+}
+
+
+.renders-gallery-image-wrap {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+}
+
+
+.renders-gallery-image-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    border-radius: 5px;
+
+    box-shadow:
+        0 12px 40px
+        rgba(0,0,0,.25);
+}
+
+
+.renders-gallery-loading {
+    position: absolute;
+
+    color: #888;
+
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+
+/* =====================================================
+   FLECHAS
+===================================================== */
+
+.renders-gallery-nav {
+    position: absolute;
+
+    top: 50%;
+
+    z-index: 2;
+
+    transform:
+        translateY(-50%);
+
+    width: 42px;
+    height: 42px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.08);
+
+    color: #fff;
+
+    font-size: 27px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        transform .15s ease;
+}
+
+
+.renders-gallery-nav:hover {
+    background:
+        rgba(255,255,255,.16);
+}
+
+
+.renders-gallery-prev {
+    left: 12px;
+}
+
+
+.renders-gallery-next {
+    right: 12px;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.renders-gallery-footer {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        auto
+        auto;
+
+    align-items: center;
+
+    gap: 18px;
+
+    padding:
+        12px 18px;
+
+    border-top:
+        1px solid
+        rgba(255,255,255,.08);
+
+    background:
+        #111;
+}
+
+
+.renders-gallery-title {
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: #fff;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.renders-gallery-counter {
+    color: #777;
+
+    font-size: 10px;
+}
+
+
+.renders-gallery-actions {
+    display: flex;
+
+    gap: 6px;
+}
+
+
+.renders-gallery-actions button {
+    min-height: 31px;
+
+    padding:
+        0 11px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    border-radius: 7px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    color: #fff;
+
+    cursor: pointer;
+
+    font: inherit;
+
+    font-size: 9px;
+
+    font-weight: 600;
+}
+
+
+.renders-gallery-actions button:hover {
+    background:
+        rgba(255,255,255,.13);
+}
+
+
+/* =====================================================
+   MINIATURAS
+===================================================== */
+
+.renders-gallery-thumbs {
+    display: flex;
+
+    gap: 7px;
+
+    min-height: 72px;
+
+    padding:
+        8px 12px;
+
+    overflow-x: auto;
+
+    background:
+        #111;
+}
+
+
+.renders-gallery-thumb {
+    width: 82px;
+    height: 52px;
+
+    flex:
+        0 0 82px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    border:
+        2px solid
+        transparent;
+
+    border-radius: 6px;
+
+    background:
+        #222;
+
+    cursor: pointer;
+
+    opacity: .55;
+
+    transition:
+        opacity .15s ease,
+        border-color .15s ease;
+}
+
+
+.renders-gallery-thumb:hover {
+    opacity: .85;
+}
+
+
+.renders-gallery-thumb.is-active {
+    border-color: #fff;
+
+    opacity: 1;
+}
+
+
+.renders-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+body.renders-gallery-opened {
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (
+    max-width: 700px
+) {
+
+    .renders-gallery-open {
+        top: 12px;
+    }
+
+
+    .renders-gallery {
+        padding: 10px;
+    }
+
+
+    .renders-gallery-window {
+        width: 100%;
+        height: 94vh;
+
+        border-radius: 13px;
+    }
+
+
+    .renders-gallery-main {
+        padding:
+            15px 45px;
+    }
+
+
+    .renders-gallery-footer {
+        grid-template-columns:
+            1fr auto;
+
+        gap: 8px;
+    }
+
+
+    .renders-gallery-counter {
+        display: none;
+    }
+
+
+    .renders-gallery-actions {
+        grid-column: 1 / -1;
+    }
+
+
+    .renders-gallery-actions button {
+        flex: 1;
+    }
+
+
+    .renders-gallery-nav {
+        width: 34px;
+        height: 34px;
+    }
+
+
+    .renders-gallery-prev {
+        left: 7px;
+    }
+
+
+    .renders-gallery-next {
+        right: 7px;
+    }
+
+}
+/* =====================================================
+   GALERÍA PÚBLICA DE RENDERS
+===================================================== */
+
+body.renders-gallery-open {
+    overflow: hidden;
+}
+
+#rendersGalleryButton {
+    order: 20;
+}
+
+.renders-gallery {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity .2s ease,
+        visibility .2s ease;
+}
+
+.renders-gallery.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.renders-gallery-backdrop {
+    position: absolute;
+    inset: 0;
+
+    background:
+        rgba(10, 10, 10, .68);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.renders-gallery-dialog {
+    position: relative;
+    z-index: 1;
+
+    width: min(1180px, 100%);
+    height: min(88vh, 820px);
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background:
+        rgba(255, 255, 255, .98);
+
+    box-shadow:
+        0 30px 100px
+        rgba(0, 0, 0, .32);
+
+    transform:
+        translateY(14px)
+        scale(.98);
+
+    transition:
+        transform .2s ease;
+}
+
+.renders-gallery.is-open
+.renders-gallery-dialog {
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+.renders-gallery-close {
+    position: absolute;
+
+    top: 15px;
+    right: 15px;
+
+    z-index: 5;
+
+    width: 34px;
+    height: 34px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: #eeeeee;
+
+    color: #444;
+
+    font-size: 22px;
+    line-height: 34px;
+
+    cursor: pointer;
+}
+
+.renders-gallery-close:hover {
+    background: #e2e2e2;
+}
+
+.renders-gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding:
+        22px 58px 17px 24px;
+
+    border-bottom:
+        1px solid #eeeeee;
+}
+
+.renders-gallery-header small {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .14em;
+
+    color: #888;
+}
+
+.renders-gallery-header h2 {
+    margin: 0;
+
+    font-size: 20px;
+    line-height: 1.1;
+
+    color: #111;
+}
+
+.renders-gallery-counter {
+    font-size: 10px;
+    font-weight: 700;
+
+    color: #777;
+}
+
+.renders-gallery-main {
+    min-height: 0;
+    flex: 1;
+
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 18px;
+}
+
+.renders-gallery-image-wrap {
+    position: relative;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    min-width: 0 !important;
+    min-height: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+    background: #f3f3f3;
+}
+
+.renders-gallery-image {
+    position: absolute !important;
+
+    inset: 0 !important;
+
+    display: block !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    max-width: none !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+}
+
+.renders-gallery-nav {
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: #111;
+
+    color: #fff;
+
+    font-size: 28px;
+    line-height: 42px;
+
+    cursor: pointer;
+
+    transition:
+        opacity .15s ease,
+        transform .15s ease;
+}
+
+.renders-gallery-nav:hover {
+    transform: scale(1.05);
+}
+
+.renders-gallery-nav:disabled {
+    opacity: .25;
+    cursor: default;
+    transform: none;
+}
+
+.renders-gallery-footer {
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding:
+        12px 18px 18px;
+
+    border-top:
+        1px solid #eeeeee;
+}
+
+.renders-gallery-thumbs {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    overflow-x: auto;
+
+    scrollbar-width: thin;
+}
+
+.renders-gallery-thumb {
+    width: 78px;
+    height: 54px;
+
+    flex: 0 0 78px;
+
+    padding: 2px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 7px;
+
+    background: #fff;
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+    opacity: .72;
+
+    transition:
+        opacity .15s ease,
+        border-color .15s ease;
+}
+
+.renders-gallery-thumb:hover,
+.renders-gallery-thumb.is-active {
+    opacity: 1;
+    border-color: #111;
+}
+
+.renders-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 4px;
+}
+
+.renders-gallery-download {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding:
+        0 13px;
+
+    border-radius: 8px;
+
+    background: #111;
+
+    color: #fff;
+
+    text-decoration: none;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.renders-gallery-download:hover {
+    background: #2b2b2b;
+}
+
+@media (max-width: 700px) {
+
+    .renders-gallery {
+        padding: 10px;
+    }
+
+    .renders-gallery-dialog {
+        height: calc(100vh - 20px);
+        border-radius: 14px;
+    }
+
+    .renders-gallery-header {
+        padding:
+            18px 52px 14px 17px;
+    }
+
+    .renders-gallery-header h2 {
+        font-size: 17px;
+    }
+
+    .renders-gallery-main {
+        grid-template-columns:
+            38px minmax(0, 1fr) 38px;
+
+        gap: 6px;
+
+        padding: 10px;
+    }
+
+    .renders-gallery-nav {
+        width: 34px;
+        height: 34px;
+
+        font-size: 23px;
+        line-height: 34px;
+    }
+
+    .renders-gallery-footer {
+        align-items: stretch;
+        flex-direction: column;
+
+        padding:
+            9px 10px 12px;
+    }
+
+    .renders-gallery-thumb {
+        width: 68px;
+        height: 48px;
+
+        flex-basis: 68px;
+    }
+
+    .renders-gallery-download {
+        width: 100%;
+    }
+}
+.renders-gallery-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.renders-gallery-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 110px;
+    height: 30px;
+
+    padding: 0 13px;
+
+    border: 0;
+    border-radius: 7px;
+
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 700;
+
+    text-decoration: none !important;
+
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.renders-gallery-open-image {
+    background: #111 !important;
+    color: #fff !important;
+}
+
+.renders-gallery-open-image:hover {
+    background: #292929 !important;
+    color: #fff !important;
+}
+
+.renders-gallery-download-file {
+    background: #eeeeee !important;
+    color: #222 !important;
+}
+
+.renders-gallery-download-file:hover {
+    background: #dddddd !important;
+    color: #111 !important;
+}
