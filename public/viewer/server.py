@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+import openskp
 from openskp import SkpFile
 from openskp.export import glb
 
@@ -313,6 +314,23 @@ def run_conversion_job(
 
 
         skp.parse()
+
+        # Diagnóstico de texturas: la versión actual de OpenSKP debe
+        # detectar las imágenes del SKP antes de generar el GLB.
+        try:
+            import PIL
+            print(f"[SKP {job_id}] OpenSKP: {getattr(openskp, '__version__', 'desconocida')} | módulo: {openskp.__file__}", flush=True)
+            print(f"[SKP {job_id}] Pillow: {getattr(PIL, '__version__', 'desconocida')}", flush=True)
+        except Exception as diagnostic_error:
+            print(f"[SKP {job_id}] No se pudo leer versión de dependencias: {diagnostic_error}", flush=True)
+
+        try:
+            preview_scene = skp.build_scene()
+            print(f"[SKP {job_id}] Primitivas: {len(preview_scene.glb_primitives)} | texturas detectadas por OpenSKP: {len(preview_scene.textures)}", flush=True)
+            for texture_index, texture in enumerate(preview_scene.textures[:20]):
+                print(f"[SKP {job_id}] TEXTURA {texture_index}: {texture.filename} | {len(texture.data)} bytes | {texture.mime_type}", flush=True)
+        except Exception as diagnostic_error:
+            print(f"[SKP {job_id}] Error comprobando texturas antes de exportar: {diagnostic_error}", flush=True)
 
 
         # =============================================
