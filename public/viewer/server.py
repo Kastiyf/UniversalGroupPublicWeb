@@ -89,20 +89,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://universal-group-public-web.vercel.app",
-        "https://universalgroup.com.py",
-        "https://www.universalgroup.com.py",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=600,
+    allow_headers=["*"]
 )
 
 
@@ -358,7 +348,9 @@ def run_conversion_job(
 
             str(
                 glb_path
-            )
+            ),
+
+            textures=True
 
         )
 
