@@ -1088,12 +1088,133 @@ let selectedObjectHelper =
 let selectedMeshIndex =
     null;
 
+let hoverObjectHelper =
+    null;
+
+let hoveredMesh =
+    null;
+
+
+function clearHoverObject() {
+
+    if (
+        hoverObjectHelper &&
+        viewer?.scene
+    ) {
+
+        viewer.scene.remove(
+            hoverObjectHelper
+        );
+
+        try {
+
+            hoverObjectHelper.geometry?.dispose?.();
+            hoverObjectHelper.material?.dispose?.();
+
+        } catch (error) {
+
+            console.warn(
+                'No se pudo liberar el contorno de preselección:',
+                error
+            );
+        }
+    }
+
+    hoverObjectHelper =
+        null;
+
+    hoveredMesh =
+        null;
+}
+
+
+function previewObject(
+    mesh
+) {
+
+    if (
+        !viewer ||
+        !mesh ||
+        !mesh.geometry
+    ) {
+
+        clearHoverObject();
+        return;
+    }
+
+    if (
+        hoveredMesh === mesh &&
+        hoverObjectHelper
+    ) {
+
+        hoverObjectHelper.matrix.copy(
+            mesh.matrixWorld
+        );
+
+        return;
+    }
+
+    clearHoverObject();
+
+    hoveredMesh =
+        mesh;
+
+    try {
+
+        const edgesGeometry =
+            new viewer.THREE.EdgesGeometry(
+                mesh.geometry,
+                18
+            );
+
+        const edgeMaterial =
+            new viewer.THREE.LineBasicMaterial({
+                color: 0x111111,
+                transparent: true,
+                opacity: 0.95,
+                depthTest: false
+            });
+
+        hoverObjectHelper =
+            new viewer.THREE.LineSegments(
+                edgesGeometry,
+                edgeMaterial
+            );
+
+        hoverObjectHelper.matrixAutoUpdate =
+            false;
+
+        hoverObjectHelper.matrix.copy(
+            mesh.matrixWorld
+        );
+
+        hoverObjectHelper.renderOrder =
+            49;
+
+        viewer.scene.add(
+            hoverObjectHelper
+        );
+
+    } catch (error) {
+
+        hoveredMesh =
+            null;
+
+        console.error(
+            'No se pudo mostrar el contorno de preselección:',
+            error
+        );
+    }
+}
+
 
 function selectObject(
     mesh
 ) {
 
     clearObjectSelection();
+
+    clearHoverObject();
 
     clearSelection();
 
@@ -1747,6 +1868,46 @@ function setupCanvasClick() {
         viewer.renderer.domElement;
 
     canvas.addEventListener(
+        'pointermove',
+        event => {
+
+            if (
+                !placingHotspot &&
+                !relocatingHotspotId
+            ) {
+
+                clearHoverObject();
+                return;
+            }
+
+            const hit =
+                viewer.raycast(event);
+
+            if (
+                !hit ||
+                !hit.point ||
+                !hit.object
+            ) {
+
+                clearHoverObject();
+                return;
+            }
+
+            previewObject(
+                hit.object
+            );
+        }
+    );
+
+    canvas.addEventListener(
+        'pointerleave',
+        () => {
+
+            clearHoverObject();
+        }
+    );
+
+    canvas.addEventListener(
         'click',
         async event => {
 
@@ -1844,6 +2005,8 @@ function cancelRelocateHotspot() {
 
     relocatingHotspotId =
         null;
+
+    clearHoverObject();
 
     viewerContainer?.classList.remove(
         'placing-hotspot'
@@ -1950,6 +2113,8 @@ function cancelPlacement() {
 
     placingHotspot =
         false;
+
+    clearHoverObject();
 
 
     viewerContainer?.classList.remove(
