@@ -27,19 +27,19 @@ function getDefaultData() {
     return {
 
         cliente:
-            'Enicab',
+            'Cooprolanda',
 
         proyecto:
             'Expo 2026',
 
         ancho:
-           3,
+            7,
 
         profundidad:
-           3,
+            5,
 
         altura:
-           250,
+            3.5,
 
         superficie:
             35,
@@ -48,7 +48,7 @@ function getDefaultData() {
             'Visualización interactiva del proyecto.',
 
         slug:
-            'enicab-expo-2026',
+            'cooprolanda-expo-2026',
 
         modelo:
             'models/stand.glb',
@@ -378,8 +378,12 @@ async function getStandData() {
 
 
     /*
-     * PRIMERO: intentar cargar el proyecto desde Supabase
-     * cuando la URL contiene ?project=slug.
+     * PRIMERO: cargar desde Supabase cuando la URL contiene
+     * ?project=...
+     *
+     * Se intenta primero una coincidencia exacta. Si no aparece,
+     * hacemos una segunda búsqueda sobre la biblioteca para tolerar
+     * diferencias de mayúsculas/minúsculas o espacios en el slug.
      */
 
     if (requestedSlug) {
@@ -398,7 +402,11 @@ async function getStandData() {
 
             if (onlineError) {
 
-                throw onlineError;
+                console.error(
+                    '[UniversalStand] Error en búsqueda exacta de Supabase:',
+                    onlineError
+                );
+
             }
 
 
@@ -407,8 +415,7 @@ async function getStandData() {
                 console.log(
                     '[UniversalStand] Proyecto cargado desde Supabase:',
                     onlineProject.slug,
-                    'navigation:',
-                    onlineProject.navigation
+                    onlineProject
                 );
 
                 return {
@@ -431,25 +438,107 @@ async function getStandData() {
                 };
             }
 
+
+            const {
+                data: projects,
+                error: projectsError
+            } = await supabase
+                .from('projects')
+                .select('*')
+                .limit(1000);
+
+
+            if (projectsError) {
+
+                throw projectsError;
+            }
+
+
+            const wanted =
+                String(
+                    requestedSlug
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            const normalizedProject =
+                Array.isArray(projects)
+                    ? projects.find(
+                        project => {
+
+                            const projectSlug =
+                                String(
+                                    project?.slug ||
+                                    ''
+                                )
+                                    .trim()
+                                    .toLowerCase();
+
+                            const projectId =
+                                String(
+                                    project?.id ||
+                                    ''
+                                )
+                                    .trim()
+                                    .toLowerCase();
+
+                            return (
+                                projectSlug === wanted ||
+                                projectId === wanted
+                            );
+                        }
+                    )
+                    : null;
+
+
+            if (normalizedProject) {
+
+                console.log(
+                    '[UniversalStand] Proyecto encontrado mediante búsqueda normalizada:',
+                    normalizedProject
+                );
+
+                return {
+
+                    ...getDefaultData(),
+
+                    ...normalizedProject,
+
+                    hotspots:
+                        Array.isArray(
+                            normalizedProject.hotspots
+                        )
+                            ? normalizedProject.hotspots
+                            : [],
+
+                    navigation:
+                        normalizeNavigation(
+                            normalizedProject.navigation
+                        )
+                };
+            }
+
+
+            console.error(
+                '[UniversalStand] No se encontró el proyecto solicitado en Supabase:',
+                requestedSlug
+            );
+
         } catch (
             error
         ) {
 
             console.error(
-                'Error cargando proyecto desde Supabase:',
+                '[UniversalStand] Error cargando proyecto desde Supabase:',
                 error
             );
-
-            /*
-             * Si Supabase falla, continúa con el sistema
-             * local original como respaldo.
-             */
         }
     }
 
 
     /*
-     * SEGUNDO: sistema local original.
+     * SEGUNDO: sistema local original como respaldo.
      */
 
     try {
@@ -459,10 +548,6 @@ async function getStandData() {
                 PROJECTS_KEY
             );
 
-
-        /*
-         * SISTEMA NUEVO
-         */
 
         if (projectsSaved) {
 
@@ -478,14 +563,6 @@ async function getStandData() {
                 ) &&
                 projects.length
             ) {
-
-                const requestedSlug =
-                    getProjectSlugFromUrl();
-
-
-                /*
-                 * Si viene ?project=...
-                 */
 
                 if (
                     requestedSlug
@@ -530,11 +607,6 @@ async function getStandData() {
                 }
 
 
-                /*
-                 * Si no se indicó proyecto,
-                 * usar el proyecto activo.
-                 */
-
                 const activeId =
                     localStorage.getItem(
                         'universalStandActiveProject'
@@ -574,11 +646,6 @@ async function getStandData() {
                 }
 
 
-                /*
-                 * Último recurso:
-                 * primer proyecto.
-                 */
-
                 return {
 
                     ...getDefaultData(),
@@ -600,10 +667,6 @@ async function getStandData() {
             }
         }
 
-
-        /*
-         * COMPATIBILIDAD CON EL SISTEMA ANTIGUO
-         */
 
         const legacy =
             localStorage.getItem(
@@ -711,71 +774,114 @@ function updateStandInformation() {
         );
 
 
+    const width =
+        Number(
+            standData.ancho
+        ) || 0;
+
+    const depth =
+        Number(
+            standData.profundidad
+        ) || 0;
+
+    const height =
+        Number(
+            standData.altura
+        ) || 0;
+
+    const calculatedSurface =
+        width *
+        depth;
+
+    const surface =
+        Number(
+            standData.superficie
+        ) > 0
+            ? Number(
+                standData.superficie
+            )
+            : calculatedSurface;
+
+
     if (title) {
 
         title.textContent =
-            standData.cliente || '';
+            standData.cliente ||
+            'Universal Group';
     }
 
 
     if (description) {
 
         description.textContent =
-            standData.descripcion || '';
+            standData.proyecto ||
+            standData.descripcion ||
+            '';
     }
 
 
     if (ancho) {
 
         ancho.textContent =
-            `${Number(
-                standData.ancho || 0
-            ).toFixed(2)} m`;
+            Math.round(
+                width * 100
+            ) +
+            ' cm';
     }
 
 
     if (profundidad) {
 
         profundidad.textContent =
-            `${Number(
-                standData.profundidad || 0
-            ).toFixed(2)} m`;
+            Math.round(
+                depth * 100
+            ) +
+            ' cm';
     }
 
 
     if (altura) {
 
         altura.textContent =
-            `${Number(
-                standData.altura || 0
-            ).toFixed(2)} m`;
+            Math.round(
+                height * 100
+            ) +
+            ' cm';
     }
 
 
     if (superficie) {
 
-        const calculatedSurface =
-            Number(
-                standData.ancho || 0
-            ) *
-            Number(
-                standData.profundidad || 0
-            );
-
-
-        const surface =
-            Number(
-                standData.superficie
-            ) > 0
-                ? Number(
-                    standData.superficie
-                )
-                : calculatedSurface;
-
-
         superficie.textContent =
-            `${surface.toFixed(2)} m²`;
+            surface.toFixed(
+                2
+            ) +
+            ' m²';
     }
+
+
+    console.log(
+        '[UniversalStand] Información mostrada en el panel:',
+        {
+            cliente:
+                standData.cliente,
+
+            proyecto:
+                standData.proyecto,
+
+            ancho:
+                width,
+
+            profundidad:
+                depth,
+
+            altura:
+                height,
+
+            superficie:
+                surface
+        }
+    );
 }
 
 
