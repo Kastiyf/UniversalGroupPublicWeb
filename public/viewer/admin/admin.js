@@ -715,6 +715,7 @@ function clearHotspots() {
         hotspotGroup.children.length
     ) {
 
+
         const child =
             hotspotGroup.children[
                 hotspotGroup.children.length - 1
@@ -1093,6 +1094,15 @@ let hoverObjectHelper =
 let hoveredMesh =
     null;
 
+let hoveredHit =
+    null;
+
+let hoveredPointerX =
+    null;
+
+let hoveredPointerY =
+    null;
+
 
 function clearHoverObject() {
 
@@ -1124,11 +1134,22 @@ function clearHoverObject() {
 
     hoveredMesh =
         null;
+
+    hoveredHit =
+        null;
+
+    hoveredPointerX =
+        null;
+
+    hoveredPointerY =
+        null;
 }
 
 
 function previewObject(
-    mesh
+    mesh,
+    hit = null,
+    event = null
 ) {
 
     if (
@@ -1150,6 +1171,15 @@ function previewObject(
             mesh.matrixWorld
         );
 
+        if (hit) {
+            hoveredHit = hit;
+        }
+
+        if (event) {
+            hoveredPointerX = event.clientX;
+            hoveredPointerY = event.clientY;
+        }
+
         return;
     }
 
@@ -1157,6 +1187,17 @@ function previewObject(
 
     hoveredMesh =
         mesh;
+
+    hoveredHit =
+        hit || null;
+
+    if (event) {
+        hoveredPointerX =
+            event.clientX;
+
+        hoveredPointerY =
+            event.clientY;
+    }
 
     try {
 
@@ -1197,6 +1238,9 @@ function previewObject(
     } catch (error) {
 
         hoveredMesh =
+            null;
+
+        hoveredHit =
             null;
 
         console.error(
@@ -1271,6 +1315,9 @@ function selectObject(
                 edgeMaterial
             );
 
+        selectedObjectHelper.userData.universalSelectionHelper =
+            true;
+
         selectedObjectHelper.matrixAutoUpdate =
             false;
 
@@ -1309,21 +1356,51 @@ function selectObject(
 
 function clearObjectSelection() {
 
-    if (
-        selectedObjectHelper &&
-        viewer
-    ) {
-
-        viewer.scene.remove(
-            selectedObjectHelper
-        );
-
-        selectedObjectHelper.geometry?.dispose();
-        selectedObjectHelper.material?.dispose();
-
-        selectedObjectHelper =
-            null;
+    if (!viewer) {
+        selectedObjectHelper = null;
+        selectedMeshIndex = null;
+        return;
     }
+
+    /*
+     * La selección es única. Eliminamos todos los contornos creados
+     * por el administrador, incluso si alguno quedó de una selección
+     * anterior.
+     */
+    const staleHelpers = [];
+
+    viewer.scene.traverse(
+        object => {
+            if (
+                object?.userData?.universalSelectionHelper
+            ) {
+                staleHelpers.push(object);
+            }
+        }
+    );
+
+    staleHelpers.forEach(
+        helper => {
+
+            helper.parent?.remove(
+                helper
+            );
+
+            helper.geometry?.dispose?.();
+
+            if (Array.isArray(helper.material)) {
+                helper.material.forEach(
+                    material =>
+                        material?.dispose?.()
+                );
+            } else {
+                helper.material?.dispose?.();
+            }
+        }
+    );
+
+    selectedObjectHelper =
+        null;
 
     selectedMeshIndex =
         null;
@@ -1398,7 +1475,7 @@ function deleteHotspot(
     if (
         !confirmed
     ) {
-
+   
         return;
     }
 
@@ -1892,8 +1969,14 @@ function setupCanvasClick() {
                 return;
             }
 
+            /*
+             * Guardamos exactamente el objeto y la intersección que
+             * produjo el contorno visible.
+             */
             previewObject(
-                hit.object
+                hit.object,
+                hit,
+                event
             );
         }
     );
@@ -1918,9 +2001,13 @@ function setupCanvasClick() {
             }
 
             const hit =
-                viewer.raycast(event);
+                getPlacementHit(event);
 
-            if (!hit || !hit.point) {
+            if (
+                !hit ||
+                !hit.point ||
+                !hit.object
+            ) {
                 return;
             }
 
@@ -1944,7 +2031,9 @@ function setupCanvasClick() {
 
             if (
                 !localPosition ||
-                !Number.isFinite(Number(meshIndex))
+                !Number.isFinite(
+                    Number(meshIndex)
+                )
             ) {
                 setStatus(
                     'No se pudo identificar la capa seleccionada.'
@@ -1952,7 +2041,15 @@ function setupCanvasClick() {
                 return;
             }
 
-            selectObject(mesh);
+            /*
+             * Eliminamos cualquier selección anterior antes de fijar
+             * la nueva.
+             */
+            clearObjectSelection();
+
+            selectObject(
+                mesh
+            );
 
             createHotspotAt(
                 localPosition,
@@ -1963,6 +2060,35 @@ function setupCanvasClick() {
         }
     );
 }
+
+/* =====================================================
+   HIT DE COLOCACIÓN
+===================================================== */
+
+function getPlacementHit(event) {
+
+    if (!viewer || !viewer.renderer) {
+        return null;
+    }
+
+    /*
+     * Si hay un contorno visible, el click usa exactamente la misma
+     * intersección que generó ese contorno. No hacemos un segundo
+     * raycast contra todo el modelo.
+     */
+    if (
+        hoveredHit &&
+        hoveredPointerX !== null &&
+        hoveredPointerY !== null &&
+        Math.abs(event.clientX - hoveredPointerX) <= 6 &&
+        Math.abs(event.clientY - hoveredPointerY) <= 6
+    ) {
+        return hoveredHit;
+    }
+
+    return viewer.raycast(event);
+}
+
 
 /* =====================================================
    COLOCACIÓN
