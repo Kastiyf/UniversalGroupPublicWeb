@@ -105,6 +105,37 @@ function toPositiveDimension(...values) {
 }
 
 
+function parseJsonArray(value) {
+
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+
+        try {
+
+            const parsed =
+                JSON.parse(value);
+
+            return Array.isArray(parsed)
+                ? parsed
+                : [];
+
+        } catch (error) {
+
+            console.error(
+                '[UniversalStand] No se pudo interpretar una lista JSON:',
+                error
+            );
+
+        }
+    }
+
+    return [];
+}
+
+
 function normalizeStandData(
     project
 ) {
@@ -177,11 +208,9 @@ function normalizeStandData(
         superficie,
 
         hotspots:
-            Array.isArray(
+            parseJsonArray(
                 source.hotspots
-            )
-                ? source.hotspots
-                : [],
+            ),
 
         navigation:
             normalizeNavigation(
@@ -425,11 +454,9 @@ async function getStandData() {
                     ...onlineProject,
 
                     hotspots:
-                        Array.isArray(
+                        parseJsonArray(
                             onlineProject.hotspots
-                        )
-                            ? onlineProject.hotspots
-                            : [],
+                        ),
 
                     navigation:
                         normalizeNavigation(
@@ -506,11 +533,9 @@ async function getStandData() {
                     ...normalizedProject,
 
                     hotspots:
-                        Array.isArray(
+                        parseJsonArray(
                             normalizedProject.hotspots
-                        )
-                            ? normalizedProject.hotspots
-                            : [],
+                        ),
 
                     navigation:
                         normalizeNavigation(
@@ -632,11 +657,9 @@ async function getStandData() {
                         ...activeProject,
 
                         hotspots:
-                            Array.isArray(
+                            parseJsonArray(
                                 activeProject.hotspots
-                            )
-                                ? activeProject.hotspots
-                                : [],
+                            ),
 
                         navigation:
                             normalizeNavigation(
@@ -653,11 +676,9 @@ async function getStandData() {
                     ...projects[0],
 
                     hotspots:
-                        Array.isArray(
+                        parseJsonArray(
                             projects[0].hotspots
-                        )
-                            ? projects[0].hotspots
-                            : [],
+                        ),
 
                     navigation:
                         normalizeNavigation(
@@ -689,11 +710,9 @@ async function getStandData() {
                 ...data,
 
                 hotspots:
-                    Array.isArray(
+                    parseJsonArray(
                         data.hotspots
-                    )
-                        ? data.hotspots
-                        : [],
+                    ),
 
                 navigation:
                     normalizeNavigation(
@@ -2833,3 +2852,598 @@ function escapeHtml(
             '&#039;'
         );
 }
+
+/* =====================================================
+   GALERÍA DE RENDERS DEL PROYECTO
+   Carga directamente desde Supabase.
+===================================================== */
+
+let publicRenders = [];
+let publicRenderIndex = 0;
+
+async function loadPublicRenders() {
+
+    try {
+
+        const requestedSlug =
+            getProjectSlugFromUrl();
+
+        let project =
+            null;
+
+        if (requestedSlug) {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from('projects')
+                .select('id, slug, cliente, proyecto, renders')
+                .eq('slug', requestedSlug)
+                .maybeSingle();
+
+            if (error) {
+                console.error(
+                    '[UniversalStand] Error buscando renders por slug:',
+                    error
+                );
+            }
+
+            project = data || null;
+        }
+
+        /*
+         * Si la búsqueda exacta no encuentra el proyecto,
+         * usamos el proyecto que ya cargó el visor.
+         */
+        if (!project && standData?.id) {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from('projects')
+                .select('id, slug, cliente, proyecto, renders')
+                .eq('id', standData.id)
+                .maybeSingle();
+
+            if (error) {
+                console.error(
+                    '[UniversalStand] Error buscando renders por id:',
+                    error
+                );
+            }
+
+            project = data || null;
+        }
+
+        /*
+         * Si standData ya trae renders, también los usamos.
+         */
+        const rawRenders =
+            project?.renders ??
+            standData?.renders ??
+            [];
+
+        publicRenders =
+            parseJsonArray(
+                rawRenders
+            ).filter(
+                render =>
+                    render &&
+                    typeof render.url === 'string' &&
+                    render.url.trim()
+            );
+
+        if (!publicRenders.length) {
+            return;
+        }
+
+        createPublicRendersGallery();
+
+    } catch (error) {
+
+        console.error(
+            '[UniversalStand] Error cargando renders públicos:',
+            error
+        );
+    }
+}
+
+
+function createPublicRendersGallery() {
+
+    if (
+        document.getElementById(
+            'rendersGalleryButton'
+        )
+    ) {
+        return;
+    }
+
+    const controls =
+        document.querySelector(
+            '.viewer-controls'
+        );
+
+    if (!controls) {
+        return;
+    }
+
+    const button =
+        document.createElement(
+            'button'
+        );
+
+    button.id =
+        'rendersGalleryButton';
+
+    button.type =
+        'button';
+
+    button.title =
+        'Ver renders';
+
+    button.innerHTML =
+        '▧ <span>Renders</span>';
+
+    button.addEventListener(
+        'click',
+        () => openPublicRendersGallery(0)
+    );
+
+    controls.appendChild(
+        button
+    );
+
+
+    const modal =
+        document.createElement(
+            'div'
+        );
+
+    modal.id =
+        'rendersGallery';
+
+    modal.className =
+        'renders-gallery';
+
+    modal.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    modal.innerHTML = `
+
+        <div
+            class="renders-gallery-backdrop"
+            data-public-render-close
+        ></div>
+
+        <div
+            class="renders-gallery-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rendersGalleryTitle"
+        >
+
+            <button
+                type="button"
+                class="renders-gallery-close"
+                aria-label="Cerrar renders"
+                data-public-render-close
+            >
+                ×
+            </button>
+
+            <div class="renders-gallery-header">
+
+                <div>
+
+                    <small>
+                        PROYECTO
+                    </small>
+
+                    <h2 id="rendersGalleryTitle">
+                        Renders
+                    </h2>
+
+                </div>
+
+                <div
+                    id="rendersGalleryCounter"
+                    class="renders-gallery-counter"
+                ></div>
+
+            </div>
+
+            <div class="renders-gallery-main">
+
+                <button
+                    type="button"
+                    class="renders-gallery-nav renders-gallery-prev"
+                    id="rendersGalleryPrev"
+                    aria-label="Render anterior"
+                >
+                    ‹
+                </button>
+
+                <div class="renders-gallery-image-wrap">
+
+                    <img
+                        id="rendersGalleryImage"
+                        class="renders-gallery-image"
+                        src=""
+                        alt=""
+                    >
+
+                </div>
+
+                <button
+                    type="button"
+                    class="renders-gallery-nav renders-gallery-next"
+                    id="rendersGalleryNext"
+                    aria-label="Render siguiente"
+                >
+                    ›
+                </button>
+
+            </div>
+
+            <div class="renders-gallery-footer">
+
+                <div
+                    id="rendersGalleryThumbs"
+                    class="renders-gallery-thumbs"
+                ></div>
+
+                <div class="renders-gallery-actions">
+
+                    <a
+                        id="rendersGalleryOpen"
+                        class="renders-gallery-action renders-gallery-open-image"
+                        href="#"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Abrir imagen
+                    </a>
+
+                    <a
+                        id="rendersGalleryDownload"
+                        class="renders-gallery-action renders-gallery-download-file"
+                        href="#"
+                        download
+                    >
+                        Descargar
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(
+        modal
+    );
+
+
+    modal
+        .querySelectorAll(
+            '[data-public-render-close]'
+        )
+        .forEach(
+            element => {
+
+                element.addEventListener(
+                    'click',
+                    closePublicRendersGallery
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            'rendersGalleryPrev'
+        )
+        ?.addEventListener(
+            'click',
+            () => movePublicRendersGallery(-1)
+        );
+
+
+    document
+        .getElementById(
+            'rendersGalleryNext'
+        )
+        ?.addEventListener(
+            'click',
+            () => movePublicRendersGallery(1)
+        );
+
+
+    document.addEventListener(
+        'keydown',
+        event => {
+
+            const gallery =
+                document.getElementById(
+                    'rendersGallery'
+                );
+
+            if (
+                !gallery ||
+                gallery.getAttribute(
+                    'aria-hidden'
+                ) !== 'false'
+            ) {
+                return;
+            }
+
+            if (
+                event.key ===
+                'Escape'
+            ) {
+                closePublicRendersGallery();
+            }
+
+            if (
+                event.key ===
+                'ArrowLeft'
+            ) {
+                movePublicRendersGallery(-1);
+            }
+
+            if (
+                event.key ===
+                'ArrowRight'
+            ) {
+                movePublicRendersGallery(1);
+            }
+        }
+    );
+
+    renderPublicRendersGallery();
+}
+
+
+function renderPublicRendersGallery() {
+
+    const item =
+        publicRenders[
+            publicRenderIndex
+        ];
+
+    if (!item) {
+        return;
+    }
+
+    const image =
+        document.getElementById(
+            'rendersGalleryImage'
+        );
+
+    const counter =
+        document.getElementById(
+            'rendersGalleryCounter'
+        );
+
+    const thumbs =
+        document.getElementById(
+            'rendersGalleryThumbs'
+        );
+
+    const open =
+        document.getElementById(
+            'rendersGalleryOpen'
+        );
+
+    const download =
+        document.getElementById(
+            'rendersGalleryDownload'
+        );
+
+    if (
+        !image ||
+        !counter ||
+        !thumbs ||
+        !open ||
+        !download
+    ) {
+        return;
+    }
+
+    image.src =
+        item.url;
+
+    image.alt =
+        item.name ||
+        `Render ${publicRenderIndex + 1}`;
+
+    counter.textContent =
+        `${publicRenderIndex + 1} / ${publicRenders.length}`;
+
+    open.href =
+        item.url;
+
+    download.href =
+        item.url;
+
+    download.download =
+        item.name ||
+        `render-${publicRenderIndex + 1}`;
+
+    thumbs.innerHTML =
+        '';
+
+    publicRenders.forEach(
+        (render, index) => {
+
+            const thumb =
+                document.createElement(
+                    'button'
+                );
+
+            thumb.type =
+                'button';
+
+            thumb.className =
+                'renders-gallery-thumb' +
+                (
+                    index ===
+                    publicRenderIndex
+                        ? ' is-active'
+                        : ''
+                );
+
+            thumb.innerHTML = `
+
+                <img
+                    src="${escapeHtml(render.url)}"
+                    alt="${escapeHtml(
+                        render.name ||
+                        `Render ${index + 1}`
+                    )}"
+                    loading="lazy"
+                >
+            `;
+
+            thumb.addEventListener(
+                'click',
+                () => {
+
+                    publicRenderIndex =
+                        index;
+
+                    renderPublicRendersGallery();
+                }
+            );
+
+            thumbs.appendChild(
+                thumb
+            );
+        }
+    );
+
+    const disabled =
+        publicRenders.length <= 1;
+
+    const prev =
+        document.getElementById(
+            'rendersGalleryPrev'
+        );
+
+    const next =
+        document.getElementById(
+            'rendersGalleryNext'
+        );
+
+    if (prev) {
+        prev.disabled =
+            disabled;
+    }
+
+    if (next) {
+        next.disabled =
+            disabled;
+    }
+}
+
+
+function openPublicRendersGallery(
+    index = 0
+) {
+
+    if (!publicRenders.length) {
+        return;
+    }
+
+    publicRenderIndex =
+        Math.max(
+            0,
+            Math.min(
+                index,
+                publicRenders.length - 1
+            )
+        );
+
+    renderPublicRendersGallery();
+
+    const modal =
+        document.getElementById(
+            'rendersGallery'
+        );
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add(
+        'visible'
+    );
+
+    modal.setAttribute(
+        'aria-hidden',
+        'false'
+    );
+
+    document.body.classList.add(
+        'renders-gallery-open'
+    );
+}
+
+
+function closePublicRendersGallery() {
+
+    const modal =
+        document.getElementById(
+            'rendersGallery'
+        );
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove(
+        'visible'
+    );
+
+    modal.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    document.body.classList.remove(
+        'renders-gallery-open'
+    );
+}
+
+
+function movePublicRendersGallery(
+    direction
+) {
+
+    if (
+        publicRenders.length <=
+        1
+    ) {
+        return;
+    }
+
+    publicRenderIndex =
+        (
+            publicRenderIndex +
+            direction +
+            publicRenders.length
+        ) %
+        publicRenders.length;
+
+    renderPublicRendersGallery();
+}
+
+
+loadPublicRenders();
