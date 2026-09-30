@@ -372,7 +372,13 @@ function initFormAndProjects() {
             const slug =
                 `${baseSlug || 'proyecto'}-${token}`;
 
+            const projectId =
+                typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                    ? crypto.randomUUID()
+                    : `project-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
             const newProject = {
+                id: projectId,
                 cliente: cliente.trim(),
                 proyecto: proyectoNombre.trim(),
                 ancho: 7,
@@ -395,8 +401,21 @@ function initFormAndProjects() {
                         .select('*')
                         .single();
 
-                if (error) throw error;
+                if (error) {
+                    throw error;
+                }
 
+                if (!data?.id || !data?.slug) {
+                    throw new Error(
+                        'Supabase creó una respuesta incompleta: no devolvió id o slug del proyecto.'
+                    );
+                }
+
+                /*
+                 * Solo cambiamos la URL después de confirmar que el INSERT
+                 * fue exitoso. Si Supabase rechaza la creación, permanecemos
+                 * en la página actual y no navegamos a ?project=null.
+                 */
                 window.location.assign(
                     `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`
                 );
@@ -407,6 +426,11 @@ function initFormAndProjects() {
                     'Error creando proyecto en Supabase:',
                     error
                 );
+
+                if (projectStatus) {
+                    projectStatus.textContent =
+                        'No se pudo crear el proyecto en Supabase.';
+                }
 
                 window.alert(
                     `No se pudo crear el proyecto en Supabase.\n\n${error?.message || 'Error desconocido.'}`
