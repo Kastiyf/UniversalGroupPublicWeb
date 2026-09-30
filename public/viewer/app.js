@@ -904,6 +904,19 @@ function updateStandInformation() {
 }
 
 
+console.log(
+    '[UniversalStand] Datos públicos finales:',
+    {
+        id: standData.id,
+        slug: standData.slug,
+        cliente: standData.cliente,
+        proyecto: standData.proyecto,
+        hotspots: standData.hotspots,
+        renders: standData.renders
+    }
+);
+
+
 updateStandInformation();
 
 
@@ -1114,6 +1127,8 @@ async function initViewer() {
 
         renderHotspotList();
 
+        setupHotspotClick();
+
         setupViewerControls();
 
 
@@ -1286,6 +1301,76 @@ function getHotspotWorldPosition(
 }
 
 
+function createHotspotMarker(
+    hotspot
+) {
+
+    if (!hotspotGroup || !viewer || !hotspot) {
+        return;
+    }
+
+    const position =
+        getHotspotWorldPosition(hotspot);
+
+    if (!position) {
+        console.warn(
+            '[UniversalStand] Hotspot sin posición válida:',
+            hotspot
+        );
+        return;
+    }
+
+    const THREE = viewer.THREE;
+
+    const group =
+        new THREE.Group();
+
+    group.name =
+        `Hotspot-${hotspot.id || hotspot.number || ''}`;
+
+    group.position.copy(position);
+    group.userData.hotspot = hotspot;
+
+    const outer =
+        new THREE.Mesh(
+            new THREE.RingGeometry(0.10, 0.16, 32),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.98,
+                side: THREE.DoubleSide,
+                depthTest: false,
+                depthWrite: false
+            })
+        );
+
+    const inner =
+        new THREE.Mesh(
+            new THREE.CircleGeometry(0.10, 32),
+            new THREE.MeshBasicMaterial({
+                color: 0x111111,
+                transparent: true,
+                opacity: 0.98,
+                side: THREE.DoubleSide,
+                depthTest: false,
+                depthWrite: false
+            })
+        );
+
+    outer.userData.hotspot = hotspot;
+    inner.userData.hotspot = hotspot;
+
+    group.add(outer);
+    group.add(inner);
+
+    group.renderOrder = 10000;
+    outer.renderOrder = 10000;
+    inner.renderOrder = 10001;
+
+    hotspotGroup.add(group);
+}
+
+
 function renderHotspots() {
 
     if (!hotspotGroup) {
@@ -1294,6 +1379,14 @@ function renderHotspots() {
 
 
     clearHotspots();
+
+
+    if (Array.isArray(standData.hotspots)) {
+
+        standData.hotspots.forEach(
+            createHotspotMarker
+        );
+    }
 
 
     renderHotspotList();
@@ -1377,7 +1470,7 @@ function setupHotspotClick() {
             const hits =
                 raycaster.intersectObjects(
                     markers,
-                    false
+                    true
                 );
 
 
@@ -1496,6 +1589,16 @@ function selectHotspot(
 
 
     focusModelOnHotspot(
+        hotspot
+    );
+
+
+    showSelectedElement(
+        hotspot
+    );
+
+
+    showHotspotPopup(
         hotspot
     );
 
@@ -2918,6 +3021,53 @@ async function loadPublicRenders() {
         }
 
         /*
+         * Último respaldo: buscar el proyecto entre los registros
+         * publicados y comparar slug/id de forma normalizada.
+         */
+        if (!project && requestedSlug) {
+
+            const {
+                data: projects,
+                error
+            } = await supabase
+                .from('projects')
+                .select('id, slug, cliente, proyecto, renders')
+                .limit(1000);
+
+            if (error) {
+                console.error(
+                    '[UniversalStand] Error buscando proyectos para renders:',
+                    error
+                );
+            } else if (Array.isArray(projects)) {
+
+                const wanted =
+                    requestedSlug
+                        .trim()
+                        .toLowerCase();
+
+                project =
+                    projects.find(item => {
+
+                        const itemSlug =
+                            String(item?.slug || '')
+                                .trim()
+                                .toLowerCase();
+
+                        const itemId =
+                            String(item?.id || '')
+                                .trim()
+                                .toLowerCase();
+
+                        return (
+                            itemSlug === wanted ||
+                            itemId === wanted
+                        );
+                    }) || null;
+            }
+        }
+
+        /*
          * Si standData ya trae renders, también los usamos.
          */
         const rawRenders =
@@ -3383,7 +3533,7 @@ function openPublicRendersGallery(
     }
 
     modal.classList.add(
-        'visible'
+        'is-open'
     );
 
     modal.setAttribute(
@@ -3409,7 +3559,7 @@ function closePublicRendersGallery() {
     }
 
     modal.classList.remove(
-        'visible'
+        'is-open'
     );
 
     modal.setAttribute(
