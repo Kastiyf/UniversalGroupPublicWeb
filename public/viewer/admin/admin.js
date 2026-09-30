@@ -11,14 +11,6 @@ import {
 } from '../supabase-client.js';
 
 
-const PROJECTS_KEY =
-    'universalStandProjects';
-
-const ACTIVE_PROJECT_KEY =
-    'universalStandActiveProject';
-
-const LEGACY_KEY =
-    'universalStand';
 
 
 /* =====================================================
@@ -95,158 +87,54 @@ function getProjectSlugFromUrl() {
    CARGAR PROYECTO
 ===================================================== */
 
-function getStandData() {
+async function getStandData() {
+
+    const requestedSlug =
+        getProjectSlugFromUrl();
 
     try {
 
-        const projectsSaved =
-            localStorage.getItem(
-                PROJECTS_KEY
-            );
+        let query =
+            supabase
+                .from('projects')
+                .select('*');
 
+        if (requestedSlug) {
 
-        /*
-         * SISTEMA NUEVO
-         */
-
-        if (projectsSaved) {
-
-            const projects =
-                JSON.parse(
-                    projectsSaved
-                );
-
-
-            if (
-                Array.isArray(
-                    projects
-                ) &&
-                projects.length
-            ) {
-
-                const requestedSlug =
-                    getProjectSlugFromUrl();
-
-
-                /*
-                 * Si viene ?project=...
-                 */
-
-                if (
+            query =
+                query.eq(
+                    'slug',
                     requestedSlug
-                ) {
+                );
+        } else {
 
-                    const requestedProject =
-                        projects.find(
-                            project =>
-                                String(
-                                    project.slug ||
-                                    ''
-                                )
-                                    .toLowerCase() ===
-                                requestedSlug
-                        );
-
-
-                    if (
-                        requestedProject
-                    ) {
-
-                        return {
-
-                            ...getDefaultData(),
-
-                            ...requestedProject,
-
-                            hotspots:
-                                Array.isArray(
-                                    requestedProject.hotspots
-                                )
-                                    ? requestedProject.hotspots
-                                    : []
-                        };
-                    }
-                }
-
-
-                /*
-                 * Si no se indicó proyecto,
-                 * usar el proyecto activo.
-                 */
-
-                const activeId =
-                    localStorage.getItem(
-                        'universalStandActiveProject'
-                    );
-
-
-                const activeProject =
-                    projects.find(
-                        project =>
-                            project.id ===
-                            activeId
-                    );
-
-
-                if (
-                    activeProject
-                ) {
-
-                    return {
-
-                        ...getDefaultData(),
-
-                        ...activeProject,
-
-                        hotspots:
-                            Array.isArray(
-                                activeProject.hotspots
-                            )
-                                ? activeProject.hotspots
-                                : []
-                    };
-                }
-
-
-                /*
-                 * Último recurso:
-                 * primer proyecto.
-                 */
-
-                return {
-
-                    ...getDefaultData(),
-
-                    ...projects[0],
-
-                    hotspots:
-                        Array.isArray(
-                            projects[0].hotspots
-                        )
-                            ? projects[0].hotspots
-                            : []
-                };
-            }
+            query =
+                query
+                    .order(
+                        'created_at',
+                        {
+                            ascending: false
+                        }
+                    )
+                    .limit(1);
         }
 
+        const {
+            data,
+            error
+        } =
+            await query.maybeSingle();
 
-        /*
-         * COMPATIBILIDAD CON EL SISTEMA ANTIGUO
-         */
+        if (error) {
+            throw error;
+        }
 
-        const legacy =
-            localStorage.getItem(
-                LEGACY_KEY
+        if (data) {
+
+            console.log(
+                '[UniversalStand] Proyecto cargado desde Supabase:',
+                data.slug
             );
-
-
-        if (legacy) {
-
-            const data =
-                JSON.parse(
-                    legacy
-                );
-
 
             return {
 
@@ -255,54 +143,37 @@ function getStandData() {
                 ...data,
 
                 hotspots:
-                    Array.isArray(
-                        data.hotspots
-                    )
+                    Array.isArray(data.hotspots)
                         ? data.hotspots
-                        : []
+                        : [],
+
+                navigation:
+                    data.navigation || null
             };
         }
 
-
-        const defaultData = getDefaultData();
-
-        localStorage.setItem(
-            PROJECTS_KEY,
-            JSON.stringify([defaultData])
+        console.warn(
+            '[UniversalStand] No se encontró el proyecto en Supabase:',
+            requestedSlug
         );
 
-        localStorage.setItem(
-            ACTIVE_PROJECT_KEY,
-            defaultData.id
-        );
-
-        localStorage.setItem(
-            LEGACY_KEY,
-            JSON.stringify(defaultData)
-        );
-
-        return defaultData;
-
-    } catch (
-        error
-    ) {
+    } catch (error) {
 
         console.error(
-            'Error leyendo proyecto:',
+            'Error cargando proyecto desde Supabase:',
             error
         );
-
-        return getDefaultData();
     }
-}
 
+    return getDefaultData();
+}
 
 /* =====================================================
    DATOS ACTUALES
 ===================================================== */
 
 const standData =
-    getStandData();
+    await getStandData();
 
 
 /* =====================================================
@@ -374,42 +245,134 @@ function initFormAndProjects() {
     widthInput?.addEventListener('input', calculateSurface);
     depthInput?.addEventListener('input', calculateSurface);
 
-    function updateProjectSelector() {
-        if (!projectSelector) return;
-        const projectsSaved = localStorage.getItem(PROJECTS_KEY);
-        let projects = [];
-        try {
-            projects = JSON.parse(projectsSaved) || [];
-        } catch (_) {}
-        if (!Array.isArray(projects) || !projects.length) {
-            projects = [standData];
+    async function updateProjectSelector() {
+
+        if (!projectSelector) {
+            return;
         }
 
-        projectSelector.innerHTML = '';
-        projects.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            const label = p.cliente ? `${p.cliente} - ${p.proyecto || 'Stand'}` : (p.proyecto || p.slug || p.id);
-            option.textContent = label;
-            if (p.id === standData.id) {
-                option.selected = true;
+        try {
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from('projects')
+                    .select('id, cliente, proyecto, slug')
+                    .order(
+                        'created_at',
+                        {
+                            ascending: false
+                        }
+                    );
+
+            if (error) {
+                throw error;
             }
-            projectSelector.appendChild(option);
-        });
+
+            const projects =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+            projectSelector.innerHTML = '';
+
+            projects.forEach(
+                project => {
+
+                    const option =
+                        document.createElement(
+                            'option'
+                        );
+
+                    option.value =
+                        project.id;
+
+                    const label =
+                        project.cliente
+                            ? `${project.cliente} - ${project.proyecto || 'Stand'}`
+                            : (
+                                project.proyecto ||
+                                project.slug ||
+                                project.id
+                            );
+
+                    option.textContent =
+                        label;
+
+                    if (
+                        project.id ===
+                        standData.id
+                    ) {
+                        option.selected =
+                            true;
+                    }
+
+                    projectSelector.appendChild(
+                        option
+                    );
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Error cargando proyectos desde Supabase:',
+                error
+            );
+        }
     }
 
-    projectSelector?.addEventListener('change', () => {
-        const targetId = projectSelector.value;
-        if (!targetId || targetId === standData.id) return;
+    projectSelector?.addEventListener(
+        'change',
+        async () => {
 
-        localStorage.setItem(ACTIVE_PROJECT_KEY, targetId);
-        const projectsSaved = localStorage.getItem(PROJECTS_KEY);
-        let projects = [];
-        try { projects = JSON.parse(projectsSaved) || []; } catch (_) {}
-        const target = projects.find(p => p.id === targetId);
-        const slug = target ? (target.slug || target.id) : targetId;
-        window.location.href = `${window.location.pathname}?project=${encodeURIComponent(slug)}`;
-    });
+            const targetId =
+                projectSelector.value;
+
+            if (
+                !targetId ||
+                targetId === standData.id
+            ) {
+                return;
+            }
+
+            try {
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabase
+                        .from('projects')
+                        .select('slug')
+                        .eq(
+                            'id',
+                            targetId
+                        )
+                        .maybeSingle();
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data?.slug) {
+                    return;
+                }
+
+                window.location.href =
+                    `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`;
+
+            } catch (error) {
+
+                console.error(
+                    'Error cambiando de proyecto:',
+                    error
+                );
+            }
+        }
+    );
 
     copyProjectLinkBtn?.addEventListener('click', async () => {
         const slug = standData.slug || standData.id;
@@ -424,34 +387,82 @@ function initFormAndProjects() {
         }
     });
 
-    saveStandBtn?.addEventListener('click', () => {
-        standData.cliente = clientInput?.value.trim() || '';
-        standData.proyecto = projectInput?.value.trim() || '';
-        standData.ancho = parseFloat(widthInput?.value) || 0;
-        standData.profundidad = parseFloat(depthInput?.value) || 0;
-        standData.altura = parseFloat(heightInput?.value) || 0;
-        standData.superficie = parseFloat(surfaceInput?.value) || (standData.ancho * standData.profundidad);
-        standData.descripcion = descriptionInput?.value.trim() || '';
-        standData.slug = slugInput?.value.trim() || standData.slug;
+    saveStandBtn?.addEventListener(
+        'click',
+        async () => {
 
-        saveCurrentProjectOnly();
-        updatePublicLink();
-        updateProjectSelector();
+            standData.cliente =
+                clientInput?.value.trim() || '';
 
-        if (projectStatus) {
-            projectStatus.textContent = 'Stand guardado correctamente.';
-            setTimeout(() => {
-                projectStatus.textContent = 'Proyecto cargado.';
-            }, 3000);
-        }
+            standData.proyecto =
+                projectInput?.value.trim() || '';
 
-        window.dispatchEvent(new CustomEvent('universalStandProjectChanged', {
-            detail: {
-                projectId: standData.id,
-                project: standData
+            standData.ancho =
+                parseFloat(widthInput?.value) || 0;
+
+            standData.profundidad =
+                parseFloat(depthInput?.value) || 0;
+
+            standData.altura =
+                parseFloat(heightInput?.value) || 0;
+
+            standData.superficie =
+                parseFloat(surfaceInput?.value) ||
+                (
+                    standData.ancho *
+                    standData.profundidad
+                );
+
+            standData.descripcion =
+                descriptionInput?.value.trim() || '';
+
+            standData.slug =
+                slugInput?.value.trim() ||
+                standData.slug;
+
+            if (projectStatus) {
+                projectStatus.textContent =
+                    'Guardando en Supabase...';
             }
-        }));
-    });
+
+            const saved =
+                await saveProjectOnline();
+
+            if (saved) {
+
+                updatePublicLink();
+
+                await updateProjectSelector();
+
+                if (projectStatus) {
+                    projectStatus.textContent =
+                        'Stand guardado correctamente.';
+                }
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        'universalStandProjectChanged',
+                        {
+                            detail: {
+                                projectId:
+                                    standData.id,
+
+                                project:
+                                    standData
+                            }
+                        }
+                    )
+                );
+
+            } else {
+
+                if (projectStatus) {
+                    projectStatus.textContent =
+                        'No se pudo guardar el stand en Supabase.';
+                }
+            }
+        }
+    );
 
     resetStandBtn?.addEventListener('click', () => {
         populateForm();
@@ -460,59 +471,179 @@ function initFormAndProjects() {
         }
     });
 
-    newProjectBtn?.addEventListener('click', () => {
-        const cliente = window.prompt('Nombre del cliente para el nuevo proyecto:');
-        if (!cliente || !cliente.trim()) return;
+    newProjectBtn?.addEventListener(
+        'click',
+        async () => {
 
-        const proyectoNombre = window.prompt('Nombre del proyecto:', 'Expo 2026') || 'Proyecto';
-        const token = Math.random().toString(36).slice(2, 7);
-        const slug = `${cliente.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${token}`;
-        const newId = `project-${Date.now()}-${token}`;
+            const cliente =
+                window.prompt(
+                    'Nombre del cliente para el nuevo proyecto:'
+                );
 
-        const newProject = {
-            ...getDefaultData(),
-            id: newId,
-            cliente: cliente.trim(),
-            proyecto: proyectoNombre.trim(),
-            slug: slug,
-            modelo: '',
-            hotspots: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+            if (
+                !cliente ||
+                !cliente.trim()
+            ) {
+                return;
+            }
 
-        const projectsSaved = localStorage.getItem(PROJECTS_KEY);
-        let projects = [];
-        try { projects = JSON.parse(projectsSaved) || []; } catch (_) {}
-        projects.push(newProject);
+            const proyectoNombre =
+                window.prompt(
+                    'Nombre del proyecto:',
+                    'Expo 2026'
+                ) ||
+                'Proyecto';
 
-        localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-        localStorage.setItem(ACTIVE_PROJECT_KEY, newId);
-        localStorage.setItem(LEGACY_KEY, JSON.stringify(newProject));
+            const token =
+                Math.random()
+                    .toString(36)
+                    .slice(2, 7);
 
-        window.location.href = `${window.location.pathname}?project=${encodeURIComponent(slug)}`;
-    });
+            const slug =
+                `${cliente.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${token}`;
 
-    deleteProjectBtn?.addEventListener('click', () => {
-        const projectsSaved = localStorage.getItem(PROJECTS_KEY);
-        let projects = [];
-        try { projects = JSON.parse(projectsSaved) || []; } catch (_) {}
-        if (projects.length <= 1) {
-            window.alert('No podés eliminar el único proyecto existente.');
-            return;
+            const newProject = {
+
+                cliente:
+                    cliente.trim(),
+
+                proyecto:
+                    proyectoNombre.trim(),
+
+                ancho:
+                    7,
+
+                profundidad:
+                    5,
+
+                altura:
+                    3.5,
+
+                superficie:
+                    35,
+
+                descripcion:
+                    'Visualización interactiva del proyecto.',
+
+                slug,
+
+                modelo:
+                    '',
+
+                hotspots:
+                    [],
+
+                navigation:
+                    null
+            };
+
+            try {
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabase
+                        .from('projects')
+                        .insert(newProject)
+                        .select('*')
+                        .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                window.location.href =
+                    `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`;
+
+            } catch (error) {
+
+                console.error(
+                    'Error creando proyecto en Supabase:',
+                    error
+                );
+
+                window.alert(
+                    'No se pudo crear el proyecto en Supabase.'
+                );
+            }
         }
+    );
 
-        const confirmDelete = window.confirm(`¿Seguro que querés eliminar el proyecto "${standData.cliente || standData.proyecto}"?`);
-        if (!confirmDelete) return;
+    deleteProjectBtn?.addEventListener(
+        'click',
+        async () => {
 
-        const updated = projects.filter(p => p.id !== standData.id);
-        localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
-        const next = updated[0];
-        localStorage.setItem(ACTIVE_PROJECT_KEY, next.id);
-        localStorage.setItem(LEGACY_KEY, JSON.stringify(next));
+            const confirmDelete =
+                window.confirm(
+                    `¿Seguro que querés eliminar el proyecto "${standData.cliente || standData.proyecto}"?`
+                );
 
-        window.location.href = `${window.location.pathname}?project=${encodeURIComponent(next.slug || next.id)}`;
-    });
+            if (!confirmDelete) {
+                return;
+            }
+
+            try {
+
+                const {
+                    error
+                } =
+                    await supabase
+                        .from('projects')
+                        .delete()
+                        .eq(
+                            'id',
+                            standData.id
+                        );
+
+                if (error) {
+                    throw error;
+                }
+
+                const {
+                    data: nextProject,
+                    error: nextError
+                } =
+                    await supabase
+                        .from('projects')
+                        .select('slug')
+                        .order(
+                            'created_at',
+                            {
+                                ascending: false
+                            }
+                        )
+                        .limit(1)
+                        .maybeSingle();
+
+                if (nextError) {
+                    throw nextError;
+                }
+
+                if (nextProject?.slug) {
+
+                    window.location.href =
+                        `${window.location.pathname}?project=${encodeURIComponent(nextProject.slug)}`;
+
+                } else {
+
+                    window.location.href =
+                        window.location.pathname;
+                }
+
+            } catch (error) {
+
+                console.error(
+                    'Error eliminando proyecto de Supabase:',
+                    error
+                );
+
+                window.alert(
+                    'No se pudo eliminar el proyecto de Supabase.'
+                );
+            }
+        }
+    );
 
     populateForm();
     updateProjectSelector();
@@ -1369,7 +1500,7 @@ function selectHotspotMesh(
    ELIMINAR HOTSPOT
 ===================================================== */
 
-function deleteHotspot(
+async function deleteHotspot(
     id
 ) {
 
@@ -1422,9 +1553,7 @@ function deleteHotspot(
     );
 
 
-    saveCurrentProjectOnly();
-
-    saveProjectOnline();
+    await saveProjectOnline();
 
 
     selectedHotspotId =
@@ -1489,7 +1618,7 @@ let selectedHotspotId =
    CREAR HOTSPOT
 ===================================================== */
 
-function createHotspotAt(
+async function createHotspotAt(
     position,
     meshIndex
 ) {
@@ -1559,7 +1688,7 @@ function createHotspotAt(
         hotspot.id;
 
 
-    saveCurrentProjectOnly();
+    await saveProjectOnline();
 
     renderHotspots();
 
@@ -1702,8 +1831,6 @@ async function saveHotspotEditor() {
     hotspot.description =
         descriptionInput?.value.trim() ||
         '';
-
-    saveCurrentProjectOnly();
 
     renderHotspots();
 
@@ -2076,8 +2203,6 @@ async function relocateHotspotAt(
 
     selectObject(mesh);
     renderHotspots();
-
-    saveCurrentProjectOnly();
 
     const savedOnline =
         await saveProjectOnline();
@@ -2531,107 +2656,6 @@ function focusHotspot(
    GUARDAR PROYECTO
 ===================================================== */
 
-function saveCurrentProjectOnly() {
-
-    try {
-
-        const projectsSaved =
-            localStorage.getItem(
-                PROJECTS_KEY
-            );
-
-
-        if (
-            !projectsSaved
-        ) {
-
-            localStorage.setItem(
-                PROJECTS_KEY,
-                JSON.stringify([
-                    standData
-                ])
-            );
-
-            localStorage.setItem(
-                LEGACY_KEY,
-                JSON.stringify(
-                    standData
-                )
-            );
-
-            return true;
-        }
-
-
-        const projects =
-            JSON.parse(
-                projectsSaved
-            );
-
-
-        if (
-            !Array.isArray(
-                projects
-            )
-        ) {
-
-            return;
-        }
-
-
-        const index =
-            projects.findIndex(
-                project =>
-                    project.id ===
-                    standData.id
-            );
-
-
-        if (
-            index !==
-            -1
-        ) {
-
-            projects[index] = {
-                ...projects[index],
-                ...standData
-            };
-
-        } else {
-
-            projects.push(
-                standData
-            );
-        }
-
-
-        localStorage.setItem(
-            PROJECTS_KEY,
-            JSON.stringify(
-                projects
-            )
-        );
-
-
-        localStorage.setItem(
-            LEGACY_KEY,
-            JSON.stringify(
-                standData
-            )
-        );
-
-        return true;
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            'No se pudo guardar el proyecto:',
-            error
-        );
-    }
-}
 
 
 /* =====================================================
