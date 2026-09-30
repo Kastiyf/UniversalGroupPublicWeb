@@ -165,10 +165,10 @@ export function createViewer(options = {}) {
     ============================================================ */
 
     const WALK_HEIGHT = 1.80;
-    const MOVE_SPEED = 2.5;
+    const MOVE_SPEED = 0.15;
     const RUN_MULTIPLIER = 1.5;
-    const VERTICAL_SPEED = 2.5;
-    const WHEEL_SPEED = 1.5;
+    const VERTICAL_SPEED = 0.15;
+    const WHEEL_SPEED = 0.10;
     const MOUSE_SENSITIVITY = 0.005;
     const CAMERA_RADIUS = 0.18;
     const MIN_CAMERA_HEIGHT = 0.5;
