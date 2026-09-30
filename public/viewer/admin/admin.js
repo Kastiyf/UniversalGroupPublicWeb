@@ -21,41 +21,18 @@ function getDefaultData() {
 
     return {
 
-        id:
-            'cooprolanda-expo-2026',
-
-        cliente:
-            'Cooprolanda',
-
-        proyecto:
-            'Expo 2026',
-
-        ancho:
-            7,
-
-        profundidad:
-            5,
-
-        altura:
-            3.5,
-
-        superficie:
-            35,
-
-        descripcion:
-            'Visualización interactiva del proyecto.',
-
-        slug:
-            'cooprolanda-expo-2026',
-
-        modelo:
-            'models/stand.glb',
-
-        hotspots:
-            [],
-
-        navigation:
-            null
+        id: null,
+        cliente: '',
+        proyecto: '',
+        ancho: 0,
+        profundidad: 0,
+        altura: 0,
+        superficie: 0,
+        descripcion: '',
+        slug: '',
+        modelo: '',
+        hotspots: [],
+        navigation: null
     };
 }
 
@@ -163,6 +140,42 @@ async function getStandData() {
             'Error cargando proyecto desde Supabase:',
             error
         );
+    }
+
+    if (requestedSlug) {
+
+        try {
+
+            const {
+                data: latestProject,
+                error: latestError
+            } =
+                await supabase
+                    .from('projects')
+                    .select('slug')
+                    .order(
+                        'created_at',
+                        { ascending: false }
+                    )
+                    .limit(1)
+                    .maybeSingle();
+
+            if (!latestError && latestProject?.slug) {
+
+                window.location.replace(
+                    `${window.location.pathname}?project=${encodeURIComponent(latestProject.slug)}`
+                );
+
+                return getDefaultData();
+            }
+
+        } catch (redirectError) {
+
+            console.error(
+                'Error buscando proyecto alternativo:',
+                redirectError
+            );
+        }
     }
 
     return getDefaultData();
@@ -585,7 +598,15 @@ function initFormAndProjects() {
 
             try {
 
+                if (!standData.id) {
+
+                    throw new Error(
+                        'El proyecto actual no tiene un ID válido en Supabase.'
+                    );
+                }
+
                 const {
+                    data: deletedProjects,
                     error
                 } =
                     await supabase
@@ -594,10 +615,18 @@ function initFormAndProjects() {
                         .eq(
                             'id',
                             standData.id
-                        );
+                        )
+                        .select('id');
 
                 if (error) {
                     throw error;
+                }
+
+                if (!Array.isArray(deletedProjects) || deletedProjects.length !== 1) {
+
+                    throw new Error(
+                        'Supabase no confirmó la eliminación del proyecto.'
+                    );
                 }
 
                 const {
