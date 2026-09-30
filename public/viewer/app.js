@@ -27,19 +27,19 @@ function getDefaultData() {
     return {
 
         cliente:
-            'Cooprolanda',
+            'Enicab',
 
         proyecto:
             'Expo 2026',
 
         ancho:
-            7,
+            3,
 
         profundidad:
-            5,
+            3,
 
         altura:
-            3.5,
+            2.50,
 
         superficie:
             35,
@@ -48,7 +48,7 @@ function getDefaultData() {
             'Visualización interactiva del proyecto.',
 
         slug:
-            'cooprolanda-expo-2026',
+            'enicab',
 
         modelo:
             'models/stand.glb',
@@ -58,6 +58,135 @@ function getDefaultData() {
 
         navigation:
             null
+    };
+}
+
+
+/* =====================================================
+   NORMALIZAR DATOS DEL PROYECTO
+===================================================== */
+
+function toPositiveDimension(...values) {
+
+    for (const value of values) {
+
+        if (
+            typeof value === 'number' &&
+            Number.isFinite(value) &&
+            value > 0
+        ) {
+            return value;
+        }
+
+        if (
+            typeof value === 'string'
+        ) {
+
+            const normalized =
+                value
+                    .trim()
+                    .replace(',', '.');
+
+            const parsed =
+                Number.parseFloat(
+                    normalized
+                );
+
+            if (
+                Number.isFinite(parsed) &&
+                parsed > 0
+            ) {
+                return parsed;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+function normalizeStandData(
+    project
+) {
+
+    const source =
+        project &&
+        typeof project === 'object'
+            ? project
+            : {};
+
+    const dimensions =
+        source.dimensions &&
+        typeof source.dimensions === 'object'
+            ? source.dimensions
+            : {};
+
+    const ancho =
+        toPositiveDimension(
+            source.ancho,
+            source.width,
+            source.ancho_m,
+            dimensions.ancho,
+            dimensions.width
+        );
+
+    const profundidad =
+        toPositiveDimension(
+            source.profundidad,
+            source.depth,
+            source.profundidad_m,
+            dimensions.profundidad,
+            dimensions.depth
+        );
+
+    const altura =
+        toPositiveDimension(
+            source.altura,
+            source.height,
+            source.altura_m,
+            dimensions.altura,
+            dimensions.height
+        );
+
+    const superficie =
+        toPositiveDimension(
+            source.superficie,
+            source.area,
+            dimensions.superficie,
+            dimensions.area
+        ) ||
+        (
+            ancho > 0 &&
+            profundidad > 0
+                ? ancho * profundidad
+                : 0
+        );
+
+    return {
+
+        ...getDefaultData(),
+
+        ...source,
+
+        ancho,
+
+        profundidad,
+
+        altura,
+
+        superficie,
+
+        hotspots:
+            Array.isArray(
+                source.hotspots
+            )
+                ? source.hotspots
+                : [],
+
+        navigation:
+            normalizeNavigation(
+                source.navigation
+            )
     };
 }
 
@@ -530,7 +659,9 @@ async function getStandData() {
 
 
 const standData =
-    await getStandData();
+    normalizeStandData(
+        await getStandData()
+    );
 
 
 /* =====================================================
