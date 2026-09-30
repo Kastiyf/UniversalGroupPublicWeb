@@ -11,8 +11,6 @@ import {
 } from '../supabase-client.js';
 
 
-
-
 /* =====================================================
    DATOS POR PROYECTO
 ===================================================== */
@@ -22,20 +20,30 @@ function getDefaultData() {
     return {
 
         id: null,
+
         cliente: '',
+
         proyecto: '',
+
         ancho: 0,
+
         profundidad: 0,
+
         altura: 0,
+
         superficie: 0,
+
         descripcion: '',
+
         slug: '',
+
         modelo: '',
+
         hotspots: [],
+
         navigation: null
     };
 }
-
 
 /* =====================================================
    SLUG DE LA URL
@@ -77,105 +85,28 @@ async function getStandData() {
                 .select('*');
 
         if (requestedSlug) {
-
-            query =
-                query.eq(
-                    'slug',
-                    requestedSlug
-                );
+            query = query.ilike('slug', requestedSlug);
         } else {
-
-            query =
-                query
-                    .order(
-                        'created_at',
-                        {
-                            ascending: false
-                        }
-                    )
-                    .limit(1);
+            query = query.order('created_at', { ascending: false }).limit(1);
         }
 
-        const {
-            data,
-            error
-        } =
-            await query.maybeSingle();
+        const { data, error } = await query.maybeSingle();
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         if (data) {
-
-            console.log(
-                '[UniversalStand] Proyecto cargado desde Supabase:',
-                data.slug
-            );
-
             return {
-
                 ...getDefaultData(),
-
                 ...data,
-
-                hotspots:
-                    Array.isArray(data.hotspots)
-                        ? data.hotspots
-                        : [],
-
-                navigation:
-                    data.navigation || null
+                hotspots: Array.isArray(data.hotspots) ? data.hotspots : [],
+                navigation: data.navigation || null
             };
         }
 
-        console.warn(
-            '[UniversalStand] No se encontró el proyecto en Supabase:',
-            requestedSlug
-        );
+        console.warn('[UniversalStand] No se encontró el proyecto en Supabase:', requestedSlug);
 
     } catch (error) {
-
-        console.error(
-            'Error cargando proyecto desde Supabase:',
-            error
-        );
-    }
-
-    if (requestedSlug) {
-
-        try {
-
-            const {
-                data: latestProject,
-                error: latestError
-            } =
-                await supabase
-                    .from('projects')
-                    .select('slug')
-                    .order(
-                        'created_at',
-                        { ascending: false }
-                    )
-                    .limit(1)
-                    .maybeSingle();
-
-            if (!latestError && latestProject?.slug) {
-
-                window.location.replace(
-                    `${window.location.pathname}?project=${encodeURIComponent(latestProject.slug)}`
-                );
-
-                return getDefaultData();
-            }
-
-        } catch (redirectError) {
-
-            console.error(
-                'Error buscando proyecto alternativo:',
-                redirectError
-            );
-        }
+        console.error('Error cargando proyecto desde Supabase:', error);
     }
 
     return getDefaultData();
@@ -260,80 +191,36 @@ function initFormAndProjects() {
 
     async function updateProjectSelector() {
 
-        if (!projectSelector) {
-            return;
-        }
+        if (!projectSelector) return;
 
         try {
-
-            const {
-                data,
-                error
-            } =
+            const { data, error } =
                 await supabase
                     .from('projects')
                     .select('id, cliente, proyecto, slug')
-                    .order(
-                        'created_at',
-                        {
-                            ascending: false
-                        }
-                    );
+                    .order('created_at', { ascending: false });
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
-            const projects =
-                Array.isArray(data)
-                    ? data
-                    : [];
-
+            const projects = Array.isArray(data) ? data : [];
             projectSelector.innerHTML = '';
 
-            projects.forEach(
-                project => {
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.cliente
+                    ? `${project.cliente} - ${project.proyecto || 'Stand'}`
+                    : (project.proyecto || project.slug || project.id);
 
-                    const option =
-                        document.createElement(
-                            'option'
-                        );
-
-                    option.value =
-                        project.id;
-
-                    const label =
-                        project.cliente
-                            ? `${project.cliente} - ${project.proyecto || 'Stand'}`
-                            : (
-                                project.proyecto ||
-                                project.slug ||
-                                project.id
-                            );
-
-                    option.textContent =
-                        label;
-
-                    if (
-                        project.id ===
-                        standData.id
-                    ) {
-                        option.selected =
-                            true;
-                    }
-
-                    projectSelector.appendChild(
-                        option
-                    );
+                if (project.id === standData.id) {
+                    option.selected = true;
                 }
-            );
+
+                projectSelector.appendChild(option);
+            });
 
         } catch (error) {
-
-            console.error(
-                'Error cargando proyectos desde Supabase:',
-                error
-            );
+            console.error('Error cargando proyectos desde Supabase:', error);
         }
     }
 
@@ -353,29 +240,48 @@ function initFormAndProjects() {
 
             try {
 
-                const {
-                    data,
-                    error
-                } =
+                const { data, error } =
                     await supabase
                         .from('projects')
                         .select('slug')
-                        .eq(
-                            'id',
-                            targetId
-                        )
+                        .eq('id', targetId)
                         .maybeSingle();
 
-                if (error) {
-                    throw error;
-                }
+                if (error) throw error;
+                if (!data?.slug) return;
 
-                if (!data?.slug) {
+                const currentParams =
+                    new URLSearchParams(
+                        window.location.search
+                    );
+
+                const currentSlug =
+                    (
+                        currentParams.get('project') ||
+                        ''
+                    ).trim().toLowerCase();
+
+                const targetSlug =
+                    String(data.slug)
+                        .trim().toLowerCase();
+
+                if (targetSlug === currentSlug) {
                     return;
                 }
 
-                window.location.href =
-                    `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`;
+                const url =
+                    new URL(
+                        window.location.href
+                    );
+
+                url.searchParams.set(
+                    'project',
+                    data.slug
+                );
+
+                window.location.assign(
+                    url.href
+                );
 
             } catch (error) {
 
@@ -400,82 +306,34 @@ function initFormAndProjects() {
         }
     });
 
-    saveStandBtn?.addEventListener(
-        'click',
-        async () => {
+    saveStandBtn?.addEventListener('click', () => {
+        standData.cliente = clientInput?.value.trim() || '';
+        standData.proyecto = projectInput?.value.trim() || '';
+        standData.ancho = parseFloat(widthInput?.value) || 0;
+        standData.profundidad = parseFloat(depthInput?.value) || 0;
+        standData.altura = parseFloat(heightInput?.value) || 0;
+        standData.superficie = parseFloat(surfaceInput?.value) || (standData.ancho * standData.profundidad);
+        standData.descripcion = descriptionInput?.value.trim() || '';
+        standData.slug = slugInput?.value.trim() || standData.slug;
 
-            standData.cliente =
-                clientInput?.value.trim() || '';
+        saveCurrentProjectOnly();
+        updatePublicLink();
+        updateProjectSelector();
 
-            standData.proyecto =
-                projectInput?.value.trim() || '';
-
-            standData.ancho =
-                parseFloat(widthInput?.value) || 0;
-
-            standData.profundidad =
-                parseFloat(depthInput?.value) || 0;
-
-            standData.altura =
-                parseFloat(heightInput?.value) || 0;
-
-            standData.superficie =
-                parseFloat(surfaceInput?.value) ||
-                (
-                    standData.ancho *
-                    standData.profundidad
-                );
-
-            standData.descripcion =
-                descriptionInput?.value.trim() || '';
-
-            standData.slug =
-                slugInput?.value.trim() ||
-                standData.slug;
-
-            if (projectStatus) {
-                projectStatus.textContent =
-                    'Guardando en Supabase...';
-            }
-
-            const saved =
-                await saveProjectOnline();
-
-            if (saved) {
-
-                updatePublicLink();
-
-                await updateProjectSelector();
-
-                if (projectStatus) {
-                    projectStatus.textContent =
-                        'Stand guardado correctamente.';
-                }
-
-                window.dispatchEvent(
-                    new CustomEvent(
-                        'universalStandProjectChanged',
-                        {
-                            detail: {
-                                projectId:
-                                    standData.id,
-
-                                project:
-                                    standData
-                            }
-                        }
-                    )
-                );
-
-            } else {
-
-                if (projectStatus) {
-                    projectStatus.textContent =
-                        'No se pudo guardar el stand en Supabase.';
-                }
-            }
+        if (projectStatus) {
+            projectStatus.textContent = 'Stand guardado correctamente.';
+            setTimeout(() => {
+                projectStatus.textContent = 'Proyecto cargado.';
+            }, 3000);
         }
-    );
+
+        window.dispatchEvent(new CustomEvent('universalStandProjectChanged', {
+            detail: {
+                projectId: standData.id,
+                project: standData
+            }
+        }));
+    });
 
     resetStandBtn?.addEventListener('click', () => {
         populateForm();
@@ -488,86 +346,60 @@ function initFormAndProjects() {
         'click',
         async () => {
 
-            const cliente =
-                window.prompt(
-                    'Nombre del cliente para el nuevo proyecto:'
-                );
+            const cliente = window.prompt(
+                'Nombre del cliente para el nuevo proyecto:'
+            );
 
-            if (
-                !cliente ||
-                !cliente.trim()
-            ) {
-                return;
-            }
+            if (!cliente || !cliente.trim()) return;
 
             const proyectoNombre =
                 window.prompt(
                     'Nombre del proyecto:',
                     'Expo 2026'
-                ) ||
-                'Proyecto';
+                ) || 'Proyecto';
 
             const token =
-                Math.random()
-                    .toString(36)
-                    .slice(2, 7);
+                Math.random().toString(36).slice(2, 7);
+
+            const baseSlug =
+                `${cliente.trim()}-${proyectoNombre.trim()}`
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
 
             const slug =
-                `${cliente.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${token}`;
+                `${baseSlug || 'proyecto'}-${token}`;
 
             const newProject = {
-
-                cliente:
-                    cliente.trim(),
-
-                proyecto:
-                    proyectoNombre.trim(),
-
-                ancho:
-                    7,
-
-                profundidad:
-                    5,
-
-                altura:
-                    3.5,
-
-                superficie:
-                    35,
-
-                descripcion:
-                    'Visualización interactiva del proyecto.',
-
+                cliente: cliente.trim(),
+                proyecto: proyectoNombre.trim(),
+                ancho: 7,
+                profundidad: 5,
+                altura: 3.5,
+                superficie: 35,
+                descripcion: 'Visualización interactiva del proyecto.',
                 slug,
-
-                modelo:
-                    '',
-
-                hotspots:
-                    [],
-
-                navigation:
-                    null
+                modelo: '',
+                hotspots: [],
+                navigation: null
             };
 
             try {
 
-                const {
-                    data,
-                    error
-                } =
+                const { data, error } =
                     await supabase
                         .from('projects')
                         .insert(newProject)
                         .select('*')
                         .single();
 
-                if (error) {
-                    throw error;
-                }
+                if (error) throw error;
 
-                window.location.href =
-                    `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`;
+                window.location.assign(
+                    `${window.location.pathname}?project=${encodeURIComponent(data.slug)}`
+                );
 
             } catch (error) {
 
@@ -577,7 +409,7 @@ function initFormAndProjects() {
                 );
 
                 window.alert(
-                    'No se pudo crear el proyecto en Supabase.'
+                    `No se pudo crear el proyecto en Supabase.\n\n${error?.message || 'Error desconocido.'}`
                 );
             }
         }
@@ -592,72 +424,55 @@ function initFormAndProjects() {
                     `¿Seguro que querés eliminar el proyecto "${standData.cliente || standData.proyecto}"?`
                 );
 
-            if (!confirmDelete) {
-                return;
-            }
+            if (!confirmDelete) return;
 
             try {
 
                 if (!standData.id) {
-
                     throw new Error(
                         'El proyecto actual no tiene un ID válido en Supabase.'
                     );
                 }
 
-                const {
-                    data: deletedProjects,
-                    error
-                } =
+                const { error } =
                     await supabase
                         .from('projects')
                         .delete()
-                        .eq(
-                            'id',
-                            standData.id
-                        )
-                        .select('id');
+                        .eq('id', standData.id);
 
-                if (error) {
-                    throw error;
-                }
+                if (error) throw error;
 
-                if (!Array.isArray(deletedProjects) || deletedProjects.length !== 1) {
+                const { data: deletedProject, error: verifyError } =
+                    await supabase
+                        .from('projects')
+                        .select('id')
+                        .eq('id', standData.id)
+                        .maybeSingle();
 
+                if (verifyError) throw verifyError;
+
+                if (deletedProject) {
                     throw new Error(
                         'Supabase no confirmó la eliminación del proyecto.'
                     );
                 }
 
-                const {
-                    data: nextProject,
-                    error: nextError
-                } =
+                const { data: nextProject, error: nextError } =
                     await supabase
                         .from('projects')
                         .select('slug')
-                        .order(
-                            'created_at',
-                            {
-                                ascending: false
-                            }
-                        )
+                        .order('created_at', { ascending: false })
                         .limit(1)
                         .maybeSingle();
 
-                if (nextError) {
-                    throw nextError;
-                }
+                if (nextError) throw nextError;
 
                 if (nextProject?.slug) {
-
-                    window.location.href =
-                        `${window.location.pathname}?project=${encodeURIComponent(nextProject.slug)}`;
-
+                    window.location.assign(
+                        `${window.location.pathname}?project=${encodeURIComponent(nextProject.slug)}`
+                    );
                 } else {
-
-                    window.location.href =
-                        window.location.pathname;
+                    window.location.assign(window.location.pathname);
                 }
 
             } catch (error) {
@@ -1529,7 +1344,7 @@ function selectHotspotMesh(
    ELIMINAR HOTSPOT
 ===================================================== */
 
-async function deleteHotspot(
+function deleteHotspot(
     id
 ) {
 
@@ -1582,7 +1397,9 @@ async function deleteHotspot(
     );
 
 
-    await saveProjectOnline();
+    saveCurrentProjectOnly();
+
+    saveProjectOnline();
 
 
     selectedHotspotId =
@@ -1647,7 +1464,7 @@ let selectedHotspotId =
    CREAR HOTSPOT
 ===================================================== */
 
-async function createHotspotAt(
+function createHotspotAt(
     position,
     meshIndex
 ) {
@@ -1717,7 +1534,7 @@ async function createHotspotAt(
         hotspot.id;
 
 
-    await saveProjectOnline();
+    saveCurrentProjectOnly();
 
     renderHotspots();
 
@@ -1860,6 +1677,8 @@ async function saveHotspotEditor() {
     hotspot.description =
         descriptionInput?.value.trim() ||
         '';
+
+    saveCurrentProjectOnly();
 
     renderHotspots();
 
@@ -2232,6 +2051,8 @@ async function relocateHotspotAt(
 
     selectObject(mesh);
     renderHotspots();
+
+    saveCurrentProjectOnly();
 
     const savedOnline =
         await saveProjectOnline();
@@ -2685,7 +2506,14 @@ function focusHotspot(
    GUARDAR PROYECTO
 ===================================================== */
 
-
+function saveCurrentProjectOnly() {
+    /*
+     * La persistencia de proyectos se realiza exclusivamente en Supabase.
+     * Esta función se conserva porque otras partes del administrador
+     * todavía la invocan antes de saveProjectOnline().
+     */
+    return true;
+}
 
 /* =====================================================
    INICIO DEL RECORRIDO

@@ -843,8 +843,46 @@ function activateProject(
         return;
     }
 
-    window.location.href =
-        `${window.location.pathname}?project=${encodeURIComponent(project.slug)}`;
+    const currentParams =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const currentSlug =
+        (
+            currentParams.get('project') ||
+            ''
+        )
+            .trim()
+            .toLowerCase();
+
+    const targetSlug =
+        String(
+            project.slug || ''
+        )
+            .trim()
+            .toLowerCase();
+
+    if (
+        !targetSlug ||
+        targetSlug === currentSlug
+    ) {
+        return;
+    }
+
+    const url =
+        new URL(
+            window.location.href
+        );
+
+    url.searchParams.set(
+        'project',
+        project.slug
+    );
+
+    window.location.assign(
+        url.href
+    );
 }
 
 
