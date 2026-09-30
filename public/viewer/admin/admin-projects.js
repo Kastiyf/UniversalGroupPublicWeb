@@ -2,21 +2,12 @@
    UNIVERSAL STAND
    ADMIN PROJECTS
    Biblioteca de proyectos
+   FUENTE DE DATOS: SUPABASE
 ===================================================== */
 
 import {
     supabase
 } from '../supabase-client.js';
-
-
-const PROJECTS_KEY =
-    'universalStandProjects';
-
-const ACTIVE_PROJECT_KEY =
-    'universalStandActiveProject';
-
-const LEGACY_KEY =
-    'universalStand';
 
 
 /* =====================================================
@@ -54,67 +45,40 @@ let filteredProjects = [];
 
 
 /* =====================================================
-   UTILIDADES
-===================================================== */
-
-function getProjects() {
-
-    try {
-
-        const saved =
-            localStorage.getItem(
-                PROJECTS_KEY
-            );
-
-
-        if (!saved) {
-
-            return [];
-        }
-
-
-        const parsed =
-            JSON.parse(
-                saved
-            );
-
-
-        if (
-            !Array.isArray(
-                parsed
-            )
-        ) {
-
-            return [];
-        }
-
-
-        return parsed;
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            'ADMIN PROJECTS: error leyendo proyectos:',
-            error
-        );
-
-
-        return [];
-    }
-}
-
-
-/* =====================================================
    PROYECTO ACTIVO
 ===================================================== */
 
 function getActiveProjectId() {
 
-    return localStorage.getItem(
-        ACTIVE_PROJECT_KEY
-    );
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const requestedSlug =
+        (
+            params.get('project') ||
+            ''
+        )
+            .trim()
+            .toLowerCase();
+
+    if (!requestedSlug) {
+        return null;
+    }
+
+    const project =
+        allProjects.find(
+            item =>
+                String(
+                    item.slug || ''
+                )
+                    .trim()
+                    .toLowerCase() ===
+                requestedSlug
+        );
+
+    return project?.id || null;
 }
 
 
@@ -129,16 +93,13 @@ function normalizeText(
     return String(
         value || ''
     )
-
         .normalize(
             'NFD'
         )
-
         .replace(
             /[\u0300-\u036f]/g,
             ''
         )
-
         .toLowerCase()
         .trim();
 }
@@ -155,27 +116,22 @@ function escapeHtml(
     return String(
         value ?? ''
     )
-
         .replaceAll(
             '&',
             '&amp;'
         )
-
         .replaceAll(
             '<',
             '&lt;'
         )
-
         .replaceAll(
             '>',
             '&gt;'
         )
-
         .replaceAll(
             '"',
             '&quot;'
         )
-
         .replaceAll(
             "'",
             '&#039;'
@@ -192,26 +148,21 @@ function formatDate(
 ) {
 
     if (!value) {
-
         return 'Sin fecha';
     }
-
 
     const date =
         new Date(
             value
         );
 
-
     if (
         Number.isNaN(
             date.getTime()
         )
     ) {
-
         return 'Sin fecha';
     }
-
 
     return new Intl.DateTimeFormat(
         'es-PY',
@@ -250,7 +201,6 @@ function getModelStatus(
             project?.modelo || ''
         ).trim();
 
-
     if (
         !model ||
         model ===
@@ -265,7 +215,6 @@ function getModelStatus(
                 'project-library-status-no-model'
         };
     }
-
 
     return {
         label:
@@ -283,18 +232,44 @@ function getModelStatus(
 
 async function loadProjectLibrary() {
 
-    let onlineProjects = [];
+    if (
+        projectLibraryStatus
+    ) {
+
+        projectLibraryStatus.textContent =
+            'Cargando proyectos desde Supabase...';
+    }
 
     try {
 
-        const response =
+        const {
+            data,
+            error
+        } =
             await supabase
                 .from('projects')
-                .select('*');
+                .select('*')
+                .order(
+                    'created_at',
+                    {
+                        ascending:
+                            false
+                    }
+                );
 
-        if (!response.error && Array.isArray(response.data)) {
-            onlineProjects = response.data;
+        if (error) {
+            throw error;
         }
+
+        allProjects =
+            Array.isArray(data)
+                ? data
+                : [];
+
+        filteredProjects =
+            [...allProjects];
+
+        renderProjectLibrary();
 
     } catch (error) {
 
@@ -302,69 +277,23 @@ async function loadProjectLibrary() {
             'ADMIN PROJECTS: no se pudo cargar Supabase:',
             error
         );
+
+        allProjects = [];
+        filteredProjects = [];
+
+        if (
+            projectLibrary
+        ) {
+            projectLibrary.innerHTML = '';
+        }
+
+        if (
+            projectLibraryStatus
+        ) {
+            projectLibraryStatus.textContent =
+                'No se pudieron cargar los proyectos desde Supabase.';
+        }
     }
-
-
-    const localProjects =
-        getProjects();
-
-    /*
-     * Supabase es la fuente principal, pero no descartamos
-     * proyectos locales que todavía no hayan llegado a Supabase.
-     * Se mezclan por ID para que crear un proyecto no lo haga
-     * desaparecer de la biblioteca.
-     */
-    const mergedProjects =
-        new Map();
-
-    localProjects.forEach(
-        project => {
-            if (project?.id) {
-                mergedProjects.set(
-                    String(project.id),
-                    project
-                );
-            }
-        }
-    );
-
-    onlineProjects.forEach(
-        project => {
-            if (!project?.id) {
-                return;
-            }
-
-            const previous =
-                mergedProjects.get(
-                    String(project.id)
-                ) || {};
-
-            mergedProjects.set(
-                String(project.id),
-                {
-                    ...previous,
-                    ...project
-                }
-            );
-        }
-    );
-
-    allProjects =
-        Array.from(
-            mergedProjects.values()
-        );
-
-    localStorage.setItem(
-        PROJECTS_KEY,
-        JSON.stringify(allProjects)
-    );
-
-
-    filteredProjects =
-        [...allProjects];
-
-
-    renderProjectLibrary();
 }
 
 
@@ -381,7 +310,6 @@ function filterProjects(
             search
         );
 
-
     if (!query) {
 
         filteredProjects =
@@ -389,7 +317,6 @@ function filterProjects(
 
         return;
     }
-
 
     filteredProjects =
         allProjects.filter(
@@ -400,30 +327,25 @@ function filterProjects(
                         project?.cliente
                     );
 
-
                 const proyecto =
                     normalizeText(
                         project?.proyecto
                     );
-
 
                 const slug =
                     normalizeText(
                         project?.slug
                     );
 
-
                 const modelName =
                     normalizeText(
                         project?.modelName
                     );
 
-
                 const description =
                     normalizeText(
                         project?.descripcion
                     );
-
 
                 return (
 
@@ -461,28 +383,24 @@ function renderProjectLibrary() {
     if (
         !projectLibrary
     ) {
-
         return;
     }
 
-
     projectLibrary.innerHTML =
         '';
-
 
     if (
         !allProjects.length
     ) {
 
         renderEmptyLibrary(
-            'No hay proyectos guardados.'
+            'No hay proyectos guardados en Supabase.'
         );
 
         updateLibraryStatus();
 
         return;
     }
-
 
     if (
         !filteredProjects.length
@@ -497,10 +415,8 @@ function renderProjectLibrary() {
         return;
     }
 
-
     const activeId =
         getActiveProjectId();
-
 
     filteredProjects.forEach(
         project => {
@@ -508,17 +424,15 @@ function renderProjectLibrary() {
             const item =
                 createProjectItem(
                     project,
-                    project.id ===
-                        activeId
+                    String(project.id) ===
+                        String(activeId)
                 );
-
 
             projectLibrary.appendChild(
                 item
             );
         }
     );
-
 
     updateLibraryStatus();
 }
@@ -538,10 +452,8 @@ function createProjectItem(
             'article'
         );
 
-
     item.className =
         'project-library-item';
-
 
     if (
         isActive
@@ -552,16 +464,13 @@ function createProjectItem(
         );
     }
 
-
     item.dataset.projectId =
         project.id || '';
-
 
     const modelStatus =
         getModelStatus(
             project
         );
-
 
     const hotspotCount =
         Array.isArray(
@@ -570,7 +479,6 @@ function createProjectItem(
             ? project.hotspots.length
             : 0;
 
-
     const navigationSaved =
         Boolean(
             project.navigation &&
@@ -578,6 +486,28 @@ function createProjectItem(
             project.navigation.target
         );
 
+    const width =
+        Number(
+            project.ancho
+        ) || 0;
+
+    const depth =
+        Number(
+            project.profundidad
+        ) || 0;
+
+    const height =
+        Number(
+            project.altura
+        ) || 0;
+
+    const surface =
+        Number(
+            project.superficie
+        ) || (
+            width *
+            depth
+        );
 
     item.innerHTML = `
 
@@ -593,7 +523,6 @@ function createProjectItem(
                     )}
 
                 </div>
-
 
                 ${
                     isActive
@@ -631,13 +560,12 @@ function createProjectItem(
 
 
                 <span>
-                    ${Number(
-                        project.ancho || 0
-                    )} × ${Number(
-                        project.profundidad || 0
-                    )} × ${Number(
-                        project.altura || 0
-                    )} m
+                    ${width} × ${depth} × ${height} m
+                </span>
+
+
+                <span>
+                    ${surface.toFixed(2)} m²
                 </span>
 
 
@@ -671,7 +599,9 @@ function createProjectItem(
                 Actualizado:
                 ${escapeHtml(
                     formatDate(
+                        project.updated_at ||
                         project.updatedAt ||
+                        project.created_at ||
                         project.createdAt
                     )
                 )}
@@ -741,12 +671,10 @@ function createProjectItem(
             '[data-action="open"]'
         );
 
-
     const publicButton =
         item.querySelector(
             '[data-action="public"]'
         );
-
 
     const copyButton =
         item.querySelector(
@@ -759,12 +687,10 @@ function createProjectItem(
         event => {
 
             event.preventDefault();
-
             event.stopPropagation();
 
-
             activateProject(
-                project.id
+                project
             );
         }
     );
@@ -775,9 +701,7 @@ function createProjectItem(
         event => {
 
             event.preventDefault();
-
             event.stopPropagation();
-
 
             openPublicProject(
                 project
@@ -791,9 +715,7 @@ function createProjectItem(
         event => {
 
             event.preventDefault();
-
             event.stopPropagation();
-
 
             copyPublicProjectLink(
                 project
@@ -811,13 +733,11 @@ function createProjectItem(
                     'button'
                 )
             ) {
-
                 return;
             }
 
-
             activateProject(
-                project.id
+                project
             );
         }
     );
@@ -838,24 +758,19 @@ function renderEmptyLibrary(
     if (
         !projectLibrary
     ) {
-
         return;
     }
-
 
     const empty =
         document.createElement(
             'div'
         );
 
-
     empty.className =
         'project-library-empty';
 
-
     empty.textContent =
         message;
-
 
     projectLibrary.appendChild(
         empty
@@ -872,29 +787,24 @@ function updateLibraryStatus() {
     if (
         !projectLibraryStatus
     ) {
-
         return;
     }
-
 
     const total =
         allProjects.length;
 
-
     const visible =
         filteredProjects.length;
-
 
     if (
         total === 0
     ) {
 
         projectLibraryStatus.textContent =
-            'No hay proyectos guardados.';
+            'No hay proyectos guardados en Supabase.';
 
         return;
     }
-
 
     if (
         visible ===
@@ -903,14 +813,11 @@ function updateLibraryStatus() {
 
         projectLibraryStatus.textContent =
             total === 1
-
                 ? '1 proyecto guardado.'
-
                 : `${total} proyectos guardados.`;
 
         return;
     }
-
 
     projectLibraryStatus.textContent =
         `${visible} de ${total} proyectos encontrados.`;
@@ -922,136 +829,22 @@ function updateLibraryStatus() {
 ===================================================== */
 
 function activateProject(
-    projectId
+    project
 ) {
 
-    if (!projectId) {
-
-        return;
-    }
-
-
-    const projects =
-        getProjects();
-
-
-    const project =
-        projects.find(
-            item =>
-                String(
-                    item.id
-                ) ===
-                String(
-                    projectId
-                )
-        );
-
-
-    if (!project) {
+    if (
+        !project?.slug
+    ) {
 
         setLibraryMessage(
-            'No se encontró el proyecto seleccionado.'
+            'Este proyecto no tiene un slug válido.'
         );
 
         return;
     }
 
-
-    localStorage.setItem(
-        ACTIVE_PROJECT_KEY,
-        project.id
-    );
-
-
-    localStorage.setItem(
-        LEGACY_KEY,
-        JSON.stringify(
-            project
-        )
-    );
-
-
-    /*
-     * Avisamos al resto del administrador.
-     * admin.js y admin-navigation.js pueden
-     * reaccionar sin duplicar la lógica.
-     */
-
-    window.dispatchEvent(
-        new CustomEvent(
-            'universalStandProjectChanged',
-            {
-                detail: {
-                    project
-                }
-            }
-        )
-    );
-
-
-    /*
-     * El selector principal del admin
-     * también debe cambiar.
-     */
-
-    const selector =
-        document.getElementById(
-            'projectSelector'
-        );
-
-
-    if (
-        selector
-    ) {
-
-        selector.value =
-            project.id;
-
-
-        selector.dispatchEvent(
-            new Event(
-                'change',
-                {
-                    bubbles:
-                        true
-                }
-            )
-        );
-    }
-
-
-    /*
-     * Si el selector anterior no existe,
-     * recargamos para mantener el estado.
-     */
-
-    if (
-        !selector
-    ) {
-
-        window.location.reload();
-
-        return;
-    }
-
-
-    allProjects =
-        getProjects();
-
-
-    filteredProjects =
-        [...allProjects];
-
-
-    renderProjectLibrary();
-
-
-    setLibraryMessage(
-        `Proyecto activo: ${
-            project.proyecto ||
-            'Sin nombre'
-        }`
-    );
+    window.location.href =
+        `${window.location.pathname}?project=${encodeURIComponent(project.slug)}`;
 }
 
 
@@ -1070,19 +863,15 @@ function setLibraryMessage(
     if (
         !projectLibraryStatus
     ) {
-
         return;
     }
-
 
     projectLibraryStatus.textContent =
         message;
 
-
     clearTimeout(
         libraryMessageTimer
     );
-
 
     libraryMessageTimer =
         setTimeout(
@@ -1107,22 +896,17 @@ function getPublicProjectUrl(
     if (
         !project
     ) {
-
         return '';
     }
-
 
     const slug =
         String(
             project.slug || ''
         ).trim();
 
-
     if (!slug) {
-
         return '';
     }
-
 
     const url =
         new URL(
@@ -1130,12 +914,10 @@ function getPublicProjectUrl(
             window.location.href
         );
 
-
     url.searchParams.set(
         'project',
         slug
     );
-
 
     return url.href;
 }
@@ -1154,7 +936,6 @@ function openPublicProject(
             project
         );
 
-
     if (!url) {
 
         setLibraryMessage(
@@ -1163,7 +944,6 @@ function openPublicProject(
 
         return;
     }
-
 
     window.open(
         url,
@@ -1185,7 +965,6 @@ async function copyPublicProjectLink(
             project
         );
 
-
     if (!url) {
 
         setLibraryMessage(
@@ -1195,13 +974,11 @@ async function copyPublicProjectLink(
         return;
     }
 
-
     try {
 
         await navigator.clipboard.writeText(
             url
         );
-
 
         setLibraryMessage(
             'Enlace público copiado.'
@@ -1216,7 +993,6 @@ async function copyPublicProjectLink(
             error
         );
 
-
         window.prompt(
             'Copiá este enlace:',
             url
@@ -1229,7 +1005,7 @@ async function copyPublicProjectLink(
    REFRESCAR
 ===================================================== */
 
-function refreshLibrary() {
+async function refreshLibrary() {
 
     if (
         refreshProjectLibrary
@@ -1242,32 +1018,18 @@ function refreshLibrary() {
             'Actualizando...';
     }
 
+    await loadProjectLibrary();
 
-    /*
-     * Volvemos a leer directamente
-     * desde localStorage.
-     */
+    if (
+        refreshProjectLibrary
+    ) {
 
-    setTimeout(
-        () => {
+        refreshProjectLibrary.disabled =
+            false;
 
-            loadProjectLibrary();
-
-
-            if (
-                refreshProjectLibrary
-            ) {
-
-                refreshProjectLibrary.disabled =
-                    false;
-
-                refreshProjectLibrary.textContent =
-                    'Actualizar';
-            }
-
-        },
-        50
-    );
+        refreshProjectLibrary.textContent =
+            'Actualizar';
+    }
 }
 
 
@@ -1282,7 +1044,6 @@ projectLibrarySearch?.addEventListener(
         filterProjects(
             projectLibrarySearch.value
         );
-
 
         renderProjectLibrary();
     }
@@ -1299,33 +1060,7 @@ refreshProjectLibrary?.addEventListener(
 
         event.preventDefault();
 
-
         refreshLibrary();
-    }
-);
-
-
-/* =====================================================
-   CAMBIOS DE LOCALSTORAGE
-===================================================== */
-
-window.addEventListener(
-    'storage',
-    event => {
-
-        if (
-            event.key ===
-                PROJECTS_KEY ||
-
-            event.key ===
-                ACTIVE_PROJECT_KEY ||
-
-            event.key ===
-                LEGACY_KEY
-        ) {
-
-            loadProjectLibrary();
-        }
     }
 );
 
@@ -1408,5 +1143,5 @@ loadProjectLibrary();
 
 
 console.log(
-    'UNIVERSAL STAND ADMIN - BIBLIOTECA DE PROYECTOS ACTIVA'
+    'UNIVERSAL STAND ADMIN - BIBLIOTECA SUPABASE ACTIVA'
 );
