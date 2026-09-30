@@ -39,8 +39,6 @@ const SATURATION_BOOST = 1.0;
 // Intensidades de luz. La suma sobre una cara horizontal (ambiente +
 // hemisferio + direccional) debe quedar <= 1.0; si pasa de 1, el canal
 // dominante se satura y el color se ve lavado (rojo -> rosa).
-// Si todo se ve muy oscuro, sube AMBIENT_INTENSITY de a 0.05.
-// Si aún se ve lavado/claro, bájalo.
 // Iluminación estilo SketchUp: una luz ambiente + una luz pegada a la
 // cámara ("headlight"). Una cara que mira de frente a la cámara recibe
 // AMBIENT + HEADLIGHT = 1.0 => color EXACTO del material (como SketchUp).
@@ -167,10 +165,10 @@ export function createViewer(options = {}) {
     ============================================================ */
 
     const WALK_HEIGHT = 1.80;
-    const MOVE_SPEED = 10000.0;
+    const MOVE_SPEED = 2.5;
     const RUN_MULTIPLIER = 1.5;
-    const VERTICAL_SPEED = 3000.0;
-    const WHEEL_SPEED = 3000.0;
+    const VERTICAL_SPEED = 2.5;
+    const WHEEL_SPEED = 1.5;
     const MOUSE_SENSITIVITY = 0.005;
     const CAMERA_RADIUS = 0.18;
     const MIN_CAMERA_HEIGHT = 0.5;
@@ -924,6 +922,7 @@ export function createViewer(options = {}) {
 
         camera.near = Math.max(maxSize / 1000, 0.01);
         camera.far = Math.max(maxSize * 100, 1000);
+
         camera.updateProjectionMatrix();
 
         controls.minDistance = 0.5;
