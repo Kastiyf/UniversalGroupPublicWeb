@@ -27,28 +27,28 @@ function getDefaultData() {
     return {
 
         cliente:
-            'Cooprolanda',
+            'Universal Group',
 
         proyecto:
-            'Expo 2026',
+            '',
 
         ancho:
-            7,
+            0,
 
         profundidad:
-            5,
+            0,
 
         altura:
-            3.5,
+            0,
 
         superficie:
-            35,
+            0,
 
         descripcion:
-            'Visualización interactiva del proyecto.',
+            '',
 
         slug:
-            'cooprolanda-expo-2026',
+            '',
 
         modelo:
             'models/stand.glb',
@@ -405,107 +405,156 @@ async function getStandData() {
     const requestedSlug =
         getProjectSlugFromUrl();
 
-
     /*
-     * PRIMERO: cargar desde Supabase cuando la URL contiene
-     * ?project=...
+     * El visor público siempre intenta obtener el mismo proyecto
+     * que administra Supabase.
      *
-     * Se intenta primero una coincidencia exacta. Si no aparece,
-     * hacemos una segunda búsqueda sobre la biblioteca para tolerar
-     * diferencias de mayúsculas/minúsculas o espacios en el slug.
+     * Orden:
+     * 1. slug recibido en ?project=
+     * 2. id recibido en ?project=
+     * 3. búsqueda normalizada entre proyectos
+     * 4. último proyecto actualizado, únicamente como respaldo
+     *
+     * Esto evita caer silenciosamente en datos de demostración
+     * cuando el slug del enlace quedó viejo.
      */
 
-    if (requestedSlug) {
+    try {
 
-        try {
+        if (requestedSlug) {
 
             const {
-                data: onlineProject,
-                error: onlineError
+                data: bySlug,
+                error: slugError
             } = await supabase
                 .from('projects')
                 .select('*')
                 .eq('slug', requestedSlug)
                 .maybeSingle();
 
-
-            if (onlineError) {
+            if (slugError) {
 
                 console.error(
-                    '[UniversalStand] Error en búsqueda exacta de Supabase:',
-                    onlineError
+                    '[UniversalStand] Error buscando proyecto por slug:',
+                    slugError
                 );
 
             }
 
-
-            if (onlineProject) {
+            if (bySlug) {
 
                 console.log(
-                    '[UniversalStand] Proyecto cargado desde Supabase:',
-                    onlineProject.slug,
-                    onlineProject
+                    '[UniversalStand] Proyecto público cargado por slug:',
+                    bySlug
                 );
 
                 return {
-
                     ...getDefaultData(),
-
-                    ...onlineProject,
-
+                    ...bySlug,
                     hotspots:
                         parseJsonArray(
-                            onlineProject.hotspots
+                            bySlug.hotspots
                         ),
-
+                    renders:
+                        parseJsonArray(
+                            bySlug.renders
+                        ),
                     navigation:
                         normalizeNavigation(
-                            onlineProject.navigation
+                            bySlug.navigation
                         )
                 };
             }
 
 
+            /*
+             * Puede ocurrir que el enlace tenga el ID del proyecto
+             * en vez del slug.
+             */
+            const {
+                data: byId,
+                error: idError
+            } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('id', requestedSlug)
+                .maybeSingle();
+
+            if (idError) {
+
+                console.error(
+                    '[UniversalStand] Error buscando proyecto por ID:',
+                    idError
+                );
+
+            }
+
+            if (byId) {
+
+                console.log(
+                    '[UniversalStand] Proyecto público cargado por ID:',
+                    byId
+                );
+
+                return {
+                    ...getDefaultData(),
+                    ...byId,
+                    hotspots:
+                        parseJsonArray(
+                            byId.hotspots
+                        ),
+                    renders:
+                        parseJsonArray(
+                            byId.renders
+                        ),
+                    navigation:
+                        normalizeNavigation(
+                            byId.navigation
+                        )
+                };
+            }
+
+
+            /*
+             * Último intento con el valor recibido en la URL.
+             * Comparamos slug e ID de forma normalizada.
+             */
             const {
                 data: projects,
-                error: projectsError
+                error: listError
             } = await supabase
                 .from('projects')
                 .select('*')
                 .limit(1000);
 
+            if (listError) {
 
-            if (projectsError) {
+                console.error(
+                    '[UniversalStand] Error listando proyectos de Supabase:',
+                    listError
+                );
 
-                throw projectsError;
-            }
+            } else if (Array.isArray(projects)) {
 
-
-            const wanted =
-                String(
+                const wanted =
                     requestedSlug
-                )
-                    .trim()
-                    .toLowerCase();
+                        .trim()
+                        .toLowerCase();
 
-
-            const normalizedProject =
-                Array.isArray(projects)
-                    ? projects.find(
+                const normalizedProject =
+                    projects.find(
                         project => {
 
                             const projectSlug =
                                 String(
-                                    project?.slug ||
-                                    ''
+                                    project?.slug || ''
                                 )
                                     .trim()
                                     .toLowerCase();
 
                             const projectId =
                                 String(
-                                    project?.id ||
-                                    ''
+                                    project?.id || ''
                                 )
                                     .trim()
                                     .toLowerCase();
@@ -515,64 +564,119 @@ async function getStandData() {
                                 projectId === wanted
                             );
                         }
-                    )
-                    : null;
+                    );
 
+                if (normalizedProject) {
 
-            if (normalizedProject) {
+                    console.log(
+                        '[UniversalStand] Proyecto público cargado mediante búsqueda normalizada:',
+                        normalizedProject
+                    );
 
-                console.log(
-                    '[UniversalStand] Proyecto encontrado mediante búsqueda normalizada:',
-                    normalizedProject
-                );
-
-                return {
-
-                    ...getDefaultData(),
-
-                    ...normalizedProject,
-
-                    hotspots:
-                        parseJsonArray(
-                            normalizedProject.hotspots
-                        ),
-
-                    navigation:
-                        normalizeNavigation(
-                            normalizedProject.navigation
-                        )
-                };
+                    return {
+                        ...getDefaultData(),
+                        ...normalizedProject,
+                        hotspots:
+                            parseJsonArray(
+                                normalizedProject.hotspots
+                            ),
+                        renders:
+                            parseJsonArray(
+                                normalizedProject.renders
+                            ),
+                        navigation:
+                            normalizeNavigation(
+                                normalizedProject.navigation
+                            )
+                    };
+                }
             }
-
-
-            console.error(
-                '[UniversalStand] No se encontró el proyecto solicitado en Supabase:',
-                requestedSlug
-            );
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                '[UniversalStand] Error cargando proyecto desde Supabase:',
-                error
-            );
         }
+
+
+        /*
+         * Si el enlace apunta a un proyecto que ya no existe,
+         * usamos el último proyecto actualizado.
+         *
+         * Es un respaldo deliberado para que el visor principal
+         * continúe conectado al proyecto actual del administrador.
+         */
+        const {
+            data: latestProject,
+            error: latestError
+        } = await supabase
+            .from('projects')
+            .select('*')
+            .order(
+                'updated_at',
+                {
+                    ascending: false,
+                    nullsFirst: false
+                }
+            )
+            .order(
+                'created_at',
+                {
+                    ascending: false,
+                    nullsFirst: false
+                }
+            )
+            .limit(1)
+            .maybeSingle();
+
+        if (latestError) {
+
+            console.error(
+                '[UniversalStand] Error buscando el último proyecto:',
+                latestError
+            );
+
+        }
+
+        if (latestProject) {
+
+            console.warn(
+                '[UniversalStand] El proyecto solicitado no fue encontrado. Se utilizará el último proyecto actualizado:',
+                latestProject
+            );
+
+            return {
+                ...getDefaultData(),
+                ...latestProject,
+                hotspots:
+                    parseJsonArray(
+                        latestProject.hotspots
+                    ),
+                renders:
+                    parseJsonArray(
+                        latestProject.renders
+                    ),
+                navigation:
+                    normalizeNavigation(
+                        latestProject.navigation
+                    )
+            };
+        }
+
+    } catch (error) {
+
+        console.error(
+            '[UniversalStand] Error cargando proyecto desde Supabase:',
+            error
+        );
     }
 
 
     /*
-     * SEGUNDO: sistema local original como respaldo.
+     * Respaldo local únicamente si Supabase no respondió.
+     * No se usa como fuente principal.
      */
-
     try {
 
         const projectsSaved =
             localStorage.getItem(
                 PROJECTS_KEY
             );
-
 
         if (projectsSaved) {
 
@@ -581,164 +685,72 @@ async function getStandData() {
                     projectsSaved
                 );
 
-
             if (
-                Array.isArray(
-                    projects
-                ) &&
+                Array.isArray(projects) &&
                 projects.length
             ) {
 
-                if (
+                const requestedProject =
                     requestedSlug
-                ) {
-
-                    const requestedProject =
-                        projects.find(
+                        ? projects.find(
                             project =>
                                 String(
-                                    project.slug ||
-                                    ''
+                                    project?.slug || ''
                                 )
                                     .trim()
                                     .toLowerCase() ===
                                 requestedSlug
-                        );
-
-
-                    if (
-                        requestedProject
-                    ) {
-
-                        return {
-
-                            ...getDefaultData(),
-
-                            ...requestedProject,
-
-                            hotspots:
-                                Array.isArray(
-                                    requestedProject.hotspots
-                                )
-                                    ? requestedProject.hotspots
-                                    : [],
-
-                            navigation:
-                                normalizeNavigation(
-                                    requestedProject.navigation
-                                )
-                        };
-                    }
-                }
-
+                        )
+                        : null;
 
                 const activeId =
                     localStorage.getItem(
                         'universalStandActiveProject'
                     );
 
-
                 const activeProject =
+                    requestedProject ||
                     projects.find(
                         project =>
-                            project.id ===
+                            project?.id ===
                             activeId
-                    );
-
-
-                if (
-                    activeProject
-                ) {
-
-                    return {
-
-                        ...getDefaultData(),
-
-                        ...activeProject,
-
-                        hotspots:
-                            parseJsonArray(
-                                activeProject.hotspots
-                            ),
-
-                        navigation:
-                            normalizeNavigation(
-                                activeProject.navigation
-                            )
-                    };
-                }
-
+                    ) ||
+                    projects[0];
 
                 return {
-
                     ...getDefaultData(),
-
-                    ...projects[0],
-
+                    ...activeProject,
                     hotspots:
                         parseJsonArray(
-                            projects[0].hotspots
+                            activeProject.hotspots
                         ),
-
+                    renders:
+                        parseJsonArray(
+                            activeProject.renders
+                        ),
                     navigation:
                         normalizeNavigation(
-                            projects[0].navigation
+                            activeProject.navigation
                         )
                 };
             }
         }
 
-
-        const legacy =
-            localStorage.getItem(
-                LEGACY_KEY
-            );
-
-
-        if (legacy) {
-
-            const data =
-                JSON.parse(
-                    legacy
-                );
-
-
-            return {
-
-                ...getDefaultData(),
-
-                ...data,
-
-                hotspots:
-                    parseJsonArray(
-                        data.hotspots
-                    ),
-
-                navigation:
-                    normalizeNavigation(
-                        data.navigation
-                    )
-            };
-        }
-
-
-        return getDefaultData();
-
-
-    } catch (
-        error
-    ) {
+    } catch (error) {
 
         console.error(
-            'Error leyendo proyecto:',
+            '[UniversalStand] Error leyendo respaldo local:',
             error
         );
-
-
-        return getDefaultData();
     }
-}
 
+
+    console.error(
+        '[UniversalStand] No fue posible cargar ningún proyecto de Supabase.'
+    );
+
+    return getDefaultData();
+}
 
 const standData =
     normalizeStandData(
@@ -913,6 +925,33 @@ console.log(
         proyecto: standData.proyecto,
         hotspots: standData.hotspots,
         renders: standData.renders
+    }
+);
+
+
+console.log(
+    '[UniversalStand] PROYECTO PÚBLICO FINAL:',
+    {
+        id:
+            standData.id,
+
+        slug:
+            standData.slug,
+
+        cliente:
+            standData.cliente,
+
+        proyecto:
+            standData.proyecto,
+
+        modelo:
+            standData.modelo,
+
+        hotspots:
+            standData.hotspots,
+
+        renders:
+            standData.renders
     }
 );
 
@@ -1124,8 +1163,7 @@ async function initViewer() {
 
 
         renderHotspots();
-
-        renderHotspotList();
+    
 
         setupHotspotClick();
 
@@ -2955,645 +2993,3 @@ function escapeHtml(
             '&#039;'
         );
 }
-
-/* =====================================================
-   GALERÍA DE RENDERS DEL PROYECTO
-   Carga directamente desde Supabase.
-===================================================== */
-
-let publicRenders = [];
-let publicRenderIndex = 0;
-
-async function loadPublicRenders() {
-
-    try {
-
-        const requestedSlug =
-            getProjectSlugFromUrl();
-
-        let project =
-            null;
-
-        if (requestedSlug) {
-
-            const {
-                data,
-                error
-            } = await supabase
-                .from('projects')
-                .select('id, slug, cliente, proyecto, renders')
-                .eq('slug', requestedSlug)
-                .maybeSingle();
-
-            if (error) {
-                console.error(
-                    '[UniversalStand] Error buscando renders por slug:',
-                    error
-                );
-            }
-
-            project = data || null;
-        }
-
-        /*
-         * Si la búsqueda exacta no encuentra el proyecto,
-         * usamos el proyecto que ya cargó el visor.
-         */
-        if (!project && standData?.id) {
-
-            const {
-                data,
-                error
-            } = await supabase
-                .from('projects')
-                .select('id, slug, cliente, proyecto, renders')
-                .eq('id', standData.id)
-                .maybeSingle();
-
-            if (error) {
-                console.error(
-                    '[UniversalStand] Error buscando renders por id:',
-                    error
-                );
-            }
-
-            project = data || null;
-        }
-
-        /*
-         * Último respaldo: buscar el proyecto entre los registros
-         * publicados y comparar slug/id de forma normalizada.
-         */
-        if (!project && requestedSlug) {
-
-            const {
-                data: projects,
-                error
-            } = await supabase
-                .from('projects')
-                .select('id, slug, cliente, proyecto, renders')
-                .limit(1000);
-
-            if (error) {
-                console.error(
-                    '[UniversalStand] Error buscando proyectos para renders:',
-                    error
-                );
-            } else if (Array.isArray(projects)) {
-
-                const wanted =
-                    requestedSlug
-                        .trim()
-                        .toLowerCase();
-
-                project =
-                    projects.find(item => {
-
-                        const itemSlug =
-                            String(item?.slug || '')
-                                .trim()
-                                .toLowerCase();
-
-                        const itemId =
-                            String(item?.id || '')
-                                .trim()
-                                .toLowerCase();
-
-                        return (
-                            itemSlug === wanted ||
-                            itemId === wanted
-                        );
-                    }) || null;
-            }
-        }
-
-        /*
-         * Si standData ya trae renders, también los usamos.
-         */
-        const rawRenders =
-            project?.renders ??
-            standData?.renders ??
-            [];
-
-        publicRenders =
-            parseJsonArray(
-                rawRenders
-            ).filter(
-                render =>
-                    render &&
-                    typeof render.url === 'string' &&
-                    render.url.trim()
-            );
-
-        if (!publicRenders.length) {
-            return;
-        }
-
-        createPublicRendersGallery();
-
-    } catch (error) {
-
-        console.error(
-            '[UniversalStand] Error cargando renders públicos:',
-            error
-        );
-    }
-}
-
-
-function createPublicRendersGallery() {
-
-    if (
-        document.getElementById(
-            'rendersGalleryButton'
-        )
-    ) {
-        return;
-    }
-
-    const controls =
-        document.querySelector(
-            '.viewer-controls'
-        );
-
-    if (!controls) {
-        return;
-    }
-
-    const button =
-        document.createElement(
-            'button'
-        );
-
-    button.id =
-        'rendersGalleryButton';
-
-    button.type =
-        'button';
-
-    button.title =
-        'Ver renders';
-
-    button.innerHTML =
-        '▧ <span>Renders</span>';
-
-    button.addEventListener(
-        'click',
-        () => openPublicRendersGallery(0)
-    );
-
-    controls.appendChild(
-        button
-    );
-
-
-    const modal =
-        document.createElement(
-            'div'
-        );
-
-    modal.id =
-        'rendersGallery';
-
-    modal.className =
-        'renders-gallery';
-
-    modal.setAttribute(
-        'aria-hidden',
-        'true'
-    );
-
-    modal.innerHTML = `
-
-        <div
-            class="renders-gallery-backdrop"
-            data-public-render-close
-        ></div>
-
-        <div
-            class="renders-gallery-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="rendersGalleryTitle"
-        >
-
-            <button
-                type="button"
-                class="renders-gallery-close"
-                aria-label="Cerrar renders"
-                data-public-render-close
-            >
-                ×
-            </button>
-
-            <div class="renders-gallery-header">
-
-                <div>
-
-                    <small>
-                        PROYECTO
-                    </small>
-
-                    <h2 id="rendersGalleryTitle">
-                        Renders
-                    </h2>
-
-                </div>
-
-                <div
-                    id="rendersGalleryCounter"
-                    class="renders-gallery-counter"
-                ></div>
-
-            </div>
-
-            <div class="renders-gallery-main">
-
-                <button
-                    type="button"
-                    class="renders-gallery-nav renders-gallery-prev"
-                    id="rendersGalleryPrev"
-                    aria-label="Render anterior"
-                >
-                    ‹
-                </button>
-
-                <div class="renders-gallery-image-wrap">
-
-                    <img
-                        id="rendersGalleryImage"
-                        class="renders-gallery-image"
-                        src=""
-                        alt=""
-                    >
-
-                </div>
-
-                <button
-                    type="button"
-                    class="renders-gallery-nav renders-gallery-next"
-                    id="rendersGalleryNext"
-                    aria-label="Render siguiente"
-                >
-                    ›
-                </button>
-
-            </div>
-
-            <div class="renders-gallery-footer">
-
-                <div
-                    id="rendersGalleryThumbs"
-                    class="renders-gallery-thumbs"
-                ></div>
-
-                <div class="renders-gallery-actions">
-
-                    <a
-                        id="rendersGalleryOpen"
-                        class="renders-gallery-action renders-gallery-open-image"
-                        href="#"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        Abrir imagen
-                    </a>
-
-                    <a
-                        id="rendersGalleryDownload"
-                        class="renders-gallery-action renders-gallery-download-file"
-                        href="#"
-                        download
-                    >
-                        Descargar
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-    `;
-
-    document.body.appendChild(
-        modal
-    );
-
-
-    modal
-        .querySelectorAll(
-            '[data-public-render-close]'
-        )
-        .forEach(
-            element => {
-
-                element.addEventListener(
-                    'click',
-                    closePublicRendersGallery
-                );
-
-            }
-        );
-
-
-    document
-        .getElementById(
-            'rendersGalleryPrev'
-        )
-        ?.addEventListener(
-            'click',
-            () => movePublicRendersGallery(-1)
-        );
-
-
-    document
-        .getElementById(
-            'rendersGalleryNext'
-        )
-        ?.addEventListener(
-            'click',
-            () => movePublicRendersGallery(1)
-        );
-
-
-    document.addEventListener(
-        'keydown',
-        event => {
-
-            const gallery =
-                document.getElementById(
-                    'rendersGallery'
-                );
-
-            if (
-                !gallery ||
-                gallery.getAttribute(
-                    'aria-hidden'
-                ) !== 'false'
-            ) {
-                return;
-            }
-
-            if (
-                event.key ===
-                'Escape'
-            ) {
-                closePublicRendersGallery();
-            }
-
-            if (
-                event.key ===
-                'ArrowLeft'
-            ) {
-                movePublicRendersGallery(-1);
-            }
-
-            if (
-                event.key ===
-                'ArrowRight'
-            ) {
-                movePublicRendersGallery(1);
-            }
-        }
-    );
-
-    renderPublicRendersGallery();
-}
-
-
-function renderPublicRendersGallery() {
-
-    const item =
-        publicRenders[
-            publicRenderIndex
-        ];
-
-    if (!item) {
-        return;
-    }
-
-    const image =
-        document.getElementById(
-            'rendersGalleryImage'
-        );
-
-    const counter =
-        document.getElementById(
-            'rendersGalleryCounter'
-        );
-
-    const thumbs =
-        document.getElementById(
-            'rendersGalleryThumbs'
-        );
-
-    const open =
-        document.getElementById(
-            'rendersGalleryOpen'
-        );
-
-    const download =
-        document.getElementById(
-            'rendersGalleryDownload'
-        );
-
-    if (
-        !image ||
-        !counter ||
-        !thumbs ||
-        !open ||
-        !download
-    ) {
-        return;
-    }
-
-    image.src =
-        item.url;
-
-    image.alt =
-        item.name ||
-        `Render ${publicRenderIndex + 1}`;
-
-    counter.textContent =
-        `${publicRenderIndex + 1} / ${publicRenders.length}`;
-
-    open.href =
-        item.url;
-
-    download.href =
-        item.url;
-
-    download.download =
-        item.name ||
-        `render-${publicRenderIndex + 1}`;
-
-    thumbs.innerHTML =
-        '';
-
-    publicRenders.forEach(
-        (render, index) => {
-
-            const thumb =
-                document.createElement(
-                    'button'
-                );
-
-            thumb.type =
-                'button';
-
-            thumb.className =
-                'renders-gallery-thumb' +
-                (
-                    index ===
-                    publicRenderIndex
-                        ? ' is-active'
-                        : ''
-                );
-
-            thumb.innerHTML = `
-
-                <img
-                    src="${escapeHtml(render.url)}"
-                    alt="${escapeHtml(
-                        render.name ||
-                        `Render ${index + 1}`
-                    )}"
-                    loading="lazy"
-                >
-            `;
-
-            thumb.addEventListener(
-                'click',
-                () => {
-
-                    publicRenderIndex =
-                        index;
-
-                    renderPublicRendersGallery();
-                }
-            );
-
-            thumbs.appendChild(
-                thumb
-            );
-        }
-    );
-
-    const disabled =
-        publicRenders.length <= 1;
-
-    const prev =
-        document.getElementById(
-            'rendersGalleryPrev'
-        );
-
-    const next =
-        document.getElementById(
-            'rendersGalleryNext'
-        );
-
-    if (prev) {
-        prev.disabled =
-            disabled;
-    }
-
-    if (next) {
-        next.disabled =
-            disabled;
-    }
-}
-
-
-function openPublicRendersGallery(
-    index = 0
-) {
-
-    if (!publicRenders.length) {
-        return;
-    }
-
-    publicRenderIndex =
-        Math.max(
-            0,
-            Math.min(
-                index,
-                publicRenders.length - 1
-            )
-        );
-
-    renderPublicRendersGallery();
-
-    const modal =
-        document.getElementById(
-            'rendersGallery'
-        );
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.add(
-        'is-open'
-    );
-
-    modal.setAttribute(
-        'aria-hidden',
-        'false'
-    );
-
-    document.body.classList.add(
-        'renders-gallery-open'
-    );
-}
-
-
-function closePublicRendersGallery() {
-
-    const modal =
-        document.getElementById(
-            'rendersGallery'
-        );
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.remove(
-        'is-open'
-    );
-
-    modal.setAttribute(
-        'aria-hidden',
-        'true'
-    );
-
-    document.body.classList.remove(
-        'renders-gallery-open'
-    );
-}
-
-
-function movePublicRendersGallery(
-    direction
-) {
-
-    if (
-        publicRenders.length <=
-        1
-    ) {
-        return;
-    }
-
-    publicRenderIndex =
-        (
-            publicRenderIndex +
-            direction +
-            publicRenders.length
-        ) %
-        publicRenders.length;
-
-    renderPublicRendersGallery();
-}
-
-
-loadPublicRenders();
