@@ -33,13 +33,13 @@ function getDefaultData() {
             'Expo 2026',
 
         ancho:
-            3,
+           3,
 
         profundidad:
-            3,
+           3,
 
         altura:
-            2.50,
+           250,
 
         superficie:
             35,
@@ -48,7 +48,7 @@ function getDefaultData() {
             'Visualización interactiva del proyecto.',
 
         slug:
-            'enicab',
+            'enicab-expo-2026',
 
         modelo:
             'models/stand.glb',
