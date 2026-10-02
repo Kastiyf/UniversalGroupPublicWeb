@@ -36,10 +36,10 @@ const socialLinks = {
 };
 
 const services = [
-  { number: '', title: 'Diseño', text: 'Concepto, arquitectura espacial y una identidad que se entiende desde lejos.', icon: Layers3 },
-  { number: '', title: 'Fabricación', text: 'Carpintería, metal, gráfica, iluminación y detalles preparados para construir.', icon: Ruler },
-  { number: '', title: 'Montaje', text: 'Coordinación, instalación y puesta a punto para llegar al evento con todo resuelto.', icon: Box },
-  { number: '', title: 'Presentación 3D', text: 'Experiencias interactivas para recorrer el proyecto antes de fabricarlo.', icon: Sparkles }
+  { number: '01', title: 'Diseño', slug: 'diseno-de-stands', text: 'Concepto, arquitectura espacial y una identidad que se entiende desde lejos.', icon: Layers3 },
+  { number: '02', title: 'Fabricación', slug: 'fabricacion-de-stands', text: 'Carpintería, metal, gráfica, iluminación y detalles preparados para construir.', icon: Ruler },
+  { number: '03', title: 'Montaje', slug: 'montaje-de-stands', text: 'Coordinación, instalación y puesta a punto para llegar al evento con todo resuelto.', icon: Box },
+  { number: '04', title: 'Presentación 3D', slug: 'presentacion-3d', text: 'Experiencias interactivas para recorrer el proyecto antes de fabricarlo.', icon: Sparkles }
 ];
 
 function App() {
@@ -174,7 +174,7 @@ function App() {
                 <h1>{current.title}</h1>
                 <p className="hero-text">{current.text}</p>
                 <div className="hero-actions">
-                  <StandInteractiveButton label="Ver proyectos" onActivate={() => go('work')} />
+                  <StandInteractiveButton label="Ver proyectos" href="#work" />
                   <StandInteractiveButton label="Hablemos" variant="ghost" onActivate={() => go('social')} />
                 </div>
               </motion.div>
@@ -241,7 +241,7 @@ function App() {
                   }}
                 >
                   <div className="service-top"><span>{number}</span><Icon size={21} strokeWidth={1.5} /></div>
-                  <h3>{title}</h3><p>{text}</p><span className="service-action-label"></span>
+                  <h3>{title}</h3><p>{text}</p>
                 </motion.article>
               ))}
             </div>

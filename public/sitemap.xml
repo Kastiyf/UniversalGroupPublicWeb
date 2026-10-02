@@ -2,7 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://universalgroup.com.py/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/servicios/diseno-de-stands/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/servicios/fabricacion-de-stands/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/servicios/montaje-de-stands/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/servicios/presentacion-3d/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/proyectos/filzon/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/proyectos/dg-equipamientos/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/proyectos/spn-2026/</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://universalgroup.com.py/proyectos/simpex-ziehl-abegg/</loc>
+    <changefreq>monthly</changefreq>
   </url>
 </urlset>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 const projects = [
   {
     client: 'FilZon',
+    slug: 'filzon',
     event: 'Stand ejecutado',
     size: 'Proyecto real',
     tag: 'Arquitectura de marca',
@@ -12,6 +13,7 @@ const projects = [
   },
   {
     client: 'DG Equipamientos',
+    slug: 'dg-equipamientos',
     event: 'Stand ejecutado',
     size: 'Proyecto real',
     tag: 'Espacio corporativo',
@@ -20,6 +22,7 @@ const projects = [
   },
   {
     client: 'SPN 2026',
+    slug: 'spn-2026',
     event: 'Congreso 2026',
     size: 'Proyecto real',
     tag: 'Experiencia de evento',
@@ -28,6 +31,7 @@ const projects = [
   },
   {
     client: 'Simpex + Ziehl-Abegg',
+    slug: 'simpex-ziehl-abegg',
     event: 'Stand ejecutado',
     size: 'Proyecto real',
     tag: 'Espacio corporativo',
