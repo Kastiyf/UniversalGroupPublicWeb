@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://universalgroup.com.py/sitemap.xml
