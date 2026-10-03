@@ -32,7 +32,7 @@ const VIEWER_URL = '/viewer/index.html?project=enicab-9cwtd';
 const socialLinks = {
   instagram: 'https://www.instagram.com/universalgroup.py/',
   facebook: 'https://www.facebook.com/universalparaguay',
-  whatsapp: 'wa.link/oiwtx3'
+  whatsapp: 'https://wa.link/v70fur'
 };
 
 const services = [
@@ -91,7 +91,6 @@ function App() {
 
       const scaled = Math.min(2.999999, timelineProgress * showcase.length);
       const nextIndex = Math.min(showcase.length - 1, Math.floor(scaled));
-      const direction = timelineProgress >= (player.getTimeline?.() ?? 0) ? 1 : -1;
 
       if (nextIndex !== showcaseIndexRef.current) {
         showcaseIndexRef.current = nextIndex;
@@ -446,7 +445,7 @@ function App() {
                   <small>WHATSAPP / TELÉFONO</small>
                   <strong>+595 991 549 500</strong>
                   <a
-                    href="wa.link/oiwtx3"
+                    href="https://wa.link/v70fur"
                     target="_blank"
                     rel="noreferrer"
                   >
