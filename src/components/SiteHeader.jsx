@@ -169,21 +169,21 @@ export default function SiteHeader() {
         <nav className="ug-nav ug-nav-left" aria-label="Navegación principal">
           <a className="ug-link" href="#work">Proyectos</a>
 
-          <button
+          <a
             id="ugServicesBtn"
-            type="button"
             className="ug-link ug-link-services"
+            href="#services"
             aria-expanded={megaOpen}
             aria-controls="ugMega"
             aria-haspopup="true"
-            onClick={(event) => { event.stopPropagation(); setMegaOpen((v) => !v); }}
+            onClick={() => setMegaOpen(false)}
             onPointerEnter={() => { if (hoverCapable()) openMega(); }}
             onPointerLeave={() => { if (hoverCapable()) scheduleClose(); }}
           >
             Servicios
             <span className="ug-link-count">4</span>
             <Caret />
-          </button>
+          </a>
         </nav>
 
         <a className="ug-brand" href="/" aria-label="Universal Group - Inicio" onClick={goTop}>

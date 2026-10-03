@@ -131,8 +131,9 @@ const VideoShowcase = forwardRef(function VideoShowcase({ activeIndex = 0 }, ref
 
       video.muted = true;
       video.playsInline = true;
-      video.autoplay = false;
-      video.preload = 'auto';
+      video.autoplay = index === 0;
+      video.loop = true;
+      video.preload = 'metadata';
 
       return () => {
         video.removeEventListener('loadedmetadata', updateMetadata);
@@ -166,6 +167,7 @@ const VideoShowcase = forwardRef(function VideoShowcase({ activeIndex = 0 }, ref
 
     video.muted = true;
     video.playsInline = true;
+    video.loop = true;
     const promise = video.play();
     if (promise?.catch) promise.catch(() => {});
   }, [activeIndex]);
@@ -181,7 +183,9 @@ const VideoShowcase = forwardRef(function VideoShowcase({ activeIndex = 0 }, ref
             src={video.src}
             muted
             playsInline
-            preload="auto"
+            autoPlay={index === 0}
+            loop
+            preload="metadata"
             aria-label={video.alt}
           />
         ))}
