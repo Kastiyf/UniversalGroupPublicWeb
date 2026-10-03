@@ -1514,22 +1514,13 @@ function setupCanvasClick() {
 /* =====================================================
    HOTSPOT
 ===================================================== */
-
-function selectHotspot(
+function focusHotspot(
     hotspot
 ) {
 
-    if (!hotspot || !viewer) {
+    if (!viewer || !hotspot) {
         return;
     }
-
-
-    selectedHotspotId =
-        hotspot.id ||
-        null;
-
-
-    renderHotspotList();
 
 
     const target =
@@ -1545,33 +1536,154 @@ function selectHotspot(
         );
 
 
-    if (selectedMesh) {
-        selectMesh(
-            selectedMesh.userData?.meshIndex
+    if (!selectedMesh) {
+        return;
+    }
+
+
+    const box =
+        new viewer.THREE.Box3()
+            .setFromObject(
+                selectedMesh
+            );
+
+
+    const center =
+        box.getCenter(
+            new viewer.THREE.Vector3()
+        );
+
+
+    const sphere =
+        box.getBoundingSphere(
+            new viewer.THREE.Sphere()
+        );
+
+
+    const radius =
+        Math.max(
+            sphere.radius,
+            0.05
+        );
+
+
+    /*
+     * Usamos la posición actual de la cámara
+     * para decidir desde qué lado mirar el objeto.
+     */
+    const cameraPosition =
+        viewer.camera.position.clone();
+
+
+    const direction =
+        cameraPosition
+            .clone()
+            .sub(center);
+
+
+    /*
+     * Si por alguna razón la cámara y el objeto
+     * están prácticamente en el mismo punto,
+     * usamos una dirección frontal segura.
+     */
+    if (
+        direction.lengthSq() <
+        0.000001
+    ) {
+
+        direction.set(
+            0,
+            0,
+            1
         );
     }
 
 
-    focusModelOnHotspot(
-        hotspot
-    );
+    /*
+     * Eliminamos el componente vertical.
+     * Así la cámara queda realmente de frente,
+     * sin mirar al objeto desde arriba o desde abajo.
+     */
+    direction.y = 0;
 
 
-    showSelectedElement(
-        hotspot
-    );
+    if (
+        direction.lengthSq() <
+        0.000001
+    ) {
+
+        direction.set(
+            0,
+            0,
+            1
+        );
+
+    } else {
+
+        direction.normalize();
+    }
 
 
-    showHotspotPopup(
-        hotspot
-    );
+    /*
+     * FOV vertical de la cámara.
+     * 45 grados es el FOV utilizado por viewer-engine.js.
+     */
+    const fov =
+        (
+            viewer.camera.fov ||
+            45
+        ) *
+        Math.PI /
+        180;
 
 
-    focusHotspot(
-        hotspot
+    /*
+     * Distancia necesaria para que el objeto
+     * completo entre en pantalla.
+     */
+    const distance =
+        Math.max(
+            radius /
+                Math.sin(
+                    fov / 2
+                ) *
+                1.15,
+
+            0.5
+        );
+
+
+    /*
+     * Colocamos la cámara directamente
+     * frente al centro del objeto.
+     */
+    const newCameraPosition =
+        center.clone()
+            .add(
+                direction.multiplyScalar(
+                    distance
+                )
+            );
+
+
+    /*
+     * Altura centrada con el objeto.
+     */
+    newCameraPosition.y =
+        center.y;
+
+
+    viewer.setCameraState(
+        {
+            position:
+                newCameraPosition,
+
+            target:
+                center
+        },
+        true
     );
 }
-
 
 /* =====================================================
    ELEMENTO SELECCIONADO
