@@ -1,0 +1,734 @@
+/* =====================================================================
+   UNIVERSAL GROUP — HEADER Y FOOTER COMPARTIDOS
+   Lo usan la página principal (React) y las páginas de servicios.
+   Si cambiás algo acá, cambia en todo el sitio.
+
+   Header SIN fondo:
+   - sobre secciones oscuras  -> texto blanco + logo blanco
+   - sobre secciones claras   -> texto negro  + logo original (rojo)
+   El tema lo decide el atributo data-header-theme de cada sección.
+===================================================================== */
+
+:root {
+    --ug-red: #e21b23;
+    --ug-header-h: 84px;
+    --ug-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ---------------------------------------------------------------
+   BARRA DE PROGRESO (páginas estáticas)
+--------------------------------------------------------------- */
+
+.ug-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.ug-progress i {
+    display: block;
+    height: 100%;
+    background: var(--ug-red);
+    transform-origin: left;
+    transform: scaleX(var(--p, 0));
+}
+
+/* ---------------------------------------------------------------
+   HEADER
+--------------------------------------------------------------- */
+
+.ug-header {
+    --fg: #fff;
+    --fg-dim: rgba(255, 255, 255, .66);
+    --fg-line: rgba(255, 255, 255, .22);
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+
+    height: var(--ug-header-h);
+    padding: 0 4vw;
+
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+
+    background: transparent;
+    color: var(--fg);
+    pointer-events: none;
+
+    transition: color .35s ease;
+}
+
+.ug-header > * {
+    pointer-events: auto;
+}
+
+.ug-header[data-theme="light"] {
+    --fg: #111;
+    --fg-dim: rgba(17, 17, 17, .6);
+    --fg-line: rgba(17, 17, 17, .22);
+}
+
+/* ---------- navegación a los dos lados ---------- */
+
+.ug-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ug-nav-left {
+    justify-self: start;
+}
+
+.ug-nav-right {
+    justify-self: end;
+}
+
+.ug-link {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 10px 14px;
+    border: 0;
+    background: none;
+
+    color: var(--fg-dim);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition: color .25s ease;
+}
+
+.ug-link::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 100%;
+    bottom: 5px;
+    height: 1px;
+    background: currentColor;
+    transition: right .4s var(--ug-ease);
+}
+
+.ug-link:hover,
+.ug-link:focus-visible,
+.ug-link[aria-expanded="true"],
+.ug-link[aria-current="page"] {
+    color: var(--fg);
+}
+
+.ug-link:hover::after,
+.ug-link:focus-visible::after,
+.ug-link[aria-expanded="true"]::after,
+.ug-link[aria-current="page"]::after {
+    right: 14px;
+}
+
+.ug-link:focus-visible,
+.ug-brand:focus-visible,
+.ug-burger:focus-visible {
+    outline: 2px solid var(--ug-red);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+.ug-link-services svg {
+    width: 10px;
+    height: 10px;
+    transition: transform .35s var(--ug-ease);
+}
+
+.ug-link-services[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+.ug-link-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border: 1px solid var(--fg-line);
+    border-radius: 99px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--fg-dim);
+    transition: background .3s ease, color .3s ease, border-color .3s ease;
+}
+
+.ug-link-services:hover .ug-link-count,
+.ug-link-services[aria-expanded="true"] .ug-link-count {
+    background: var(--ug-red);
+    border-color: var(--ug-red);
+    color: #fff;
+}
+
+/* ---------- logo central (blanco / original) ---------- */
+
+.ug-brand {
+    position: relative;
+    display: block;
+    width: 124px;
+    height: 46px;
+    padding: 0;
+    border: 0;
+    background: none;
+    justify-self: center;
+}
+
+.ug-logo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    transition: opacity .35s ease, transform .5s var(--ug-ease);
+}
+
+.ug-logo-red {
+    opacity: 0;
+}
+
+.ug-header[data-theme="light"] .ug-logo-white {
+    opacity: 0;
+}
+
+.ug-header[data-theme="light"] .ug-logo-red {
+    opacity: 1;
+}
+
+.ug-brand:hover .ug-logo {
+    transform: scale(1.05);
+}
+
+/* ---------- botón del menú móvil ---------- */
+
+.ug-burger {
+    display: none;
+    justify-self: end;
+
+    position: relative;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+
+    border: 1px solid var(--fg-line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+
+    transition: border-color .3s ease, transform .3s ease;
+}
+
+.ug-burger:hover {
+    border-color: var(--ug-red);
+}
+
+.ug-burger span {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    height: 1.5px;
+    background: currentColor;
+    transition: transform .4s var(--ug-ease), top .4s var(--ug-ease);
+}
+
+.ug-burger span:nth-child(1) { top: 16px; }
+.ug-burger span:nth-child(2) { top: 24px; }
+
+.ug-burger[aria-expanded="true"] span:nth-child(1) {
+    top: 20px;
+    transform: rotate(45deg);
+}
+
+.ug-burger[aria-expanded="true"] span:nth-child(2) {
+    top: 20px;
+    transform: rotate(-45deg);
+}
+
+/* ---------------------------------------------------------------
+   VENTANA DE SERVICIOS (mega menú)
+--------------------------------------------------------------- */
+
+.ug-mega {
+    --mx: 50%;
+    --my: 50%;
+
+    position: fixed;
+    top: calc(var(--ug-header-h) - 8px);
+    left: 50%;
+    z-index: 490;
+
+    width: min(1020px, calc(100vw - 32px));
+
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 24px;
+    background: rgba(10, 10, 10, .9);
+    color: #f4f4f4;
+    box-shadow:
+        0 40px 120px rgba(0, 0, 0, .55),
+        0 0 0 1px rgba(0, 0, 0, .4);
+    backdrop-filter: blur(22px) saturate(1.2);
+    -webkit-backdrop-filter: blur(22px) saturate(1.2);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, -14px) scale(.985);
+    transform-origin: top center;
+
+    transition:
+        opacity .3s ease,
+        transform .5s var(--ug-ease),
+        visibility .3s;
+    overflow: hidden;
+}
+
+.ug-mega.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0) scale(1);
+}
+
+.ug-mega::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+        420px 300px at var(--mx) var(--my),
+        rgba(226, 27, 35, .13),
+        transparent 70%
+    );
+}
+
+.ug-mega-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: .92fr 1.08fr;
+    min-height: 340px;
+}
+
+/* ---------- panel izquierdo: plano animado ---------- */
+
+.ug-mega-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    padding: 26px 26px 22px;
+    border-right: 1px solid rgba(255, 255, 255, .09);
+
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+.ug-mega-tag {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: rgba(255, 255, 255, .5);
+}
+
+.ug-mega-tag b {
+    color: var(--ug-red);
+    font-weight: 700;
+}
+
+.ug-bp {
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    margin: 8px 0;
+    overflow: visible;
+}
+
+.ug-bp g[data-bp] {
+    display: none;
+}
+
+.ug-bp g[data-bp].is-on {
+    display: block;
+}
+
+.ug-bp path {
+    fill: none;
+    stroke: rgba(255, 255, 255, .86);
+    stroke-width: 1.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+}
+
+.ug-bp g.is-on path {
+    animation: ugDraw 1.15s var(--ug-ease) forwards;
+    animation-delay: calc(var(--i) * 55ms);
+}
+
+.ug-bp .bp-red {
+    stroke: var(--ug-red);
+    stroke-width: 1.8;
+}
+
+.ug-bp .bp-dim {
+    stroke: rgba(255, 255, 255, .42);
+    stroke-dasharray: .018 .018;
+    stroke-dashoffset: 0;
+    animation: none !important;
+}
+
+.ug-bp .bp-strong {
+    stroke-width: 2.2;
+}
+
+.ug-bp .bp-t {
+    fill: rgba(255, 255, 255, .72);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    letter-spacing: .08em;
+}
+
+.ug-bp .bp-small {
+    font-size: 8.5px;
+    letter-spacing: .16em;
+    fill: rgba(255, 255, 255, .5);
+}
+
+.ug-bp .bp-dot {
+    fill: var(--ug-red);
+}
+
+@keyframes ugDraw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.ug-mega-caption {
+    margin: 0;
+    max-width: 330px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .62);
+}
+
+/* ---------- panel derecho: lista ---------- */
+
+.ug-mega-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 0;
+    padding: 14px;
+    list-style: none;
+}
+
+.ug-mega-item {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    align-items: center;
+    gap: 12px;
+
+    padding: 17px 16px;
+    border-radius: 14px;
+
+    color: inherit;
+    text-decoration: none;
+
+    transition: background .3s ease, transform .4s var(--ug-ease);
+}
+
+.ug-mega-item + .ug-mega-item {
+    margin-top: 2px;
+}
+
+.ug-mega-item:hover,
+.ug-mega-item:focus-visible,
+.ug-mega-item.is-active {
+    background: rgba(255, 255, 255, .06);
+    transform: translateX(4px);
+    outline: none;
+}
+
+.ug-mega-item:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--ug-red);
+}
+
+.ug-mega-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    color: rgba(255, 255, 255, .4);
+    transition: color .3s ease;
+}
+
+.ug-mega-item:hover .ug-mega-num,
+.ug-mega-item.is-active .ug-mega-num {
+    color: var(--ug-red);
+}
+
+.ug-mega-title {
+    display: block;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -.035em;
+    line-height: 1.1;
+}
+
+.ug-mega-desc {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, .5);
+}
+
+.ug-mega-arrow {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 50%;
+    font-size: 14px;
+    transition:
+        background .3s ease,
+        border-color .3s ease,
+        transform .4s var(--ug-ease);
+}
+
+.ug-mega-item:hover .ug-mega-arrow,
+.ug-mega-item.is-active .ug-mega-arrow {
+    background: var(--ug-red);
+    border-color: var(--ug-red);
+    transform: rotate(-45deg);
+}
+
+.ug-mega-foot {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 26px;
+    border-top: 1px solid rgba(255, 255, 255, .09);
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, .5);
+}
+
+.ug-mega-foot a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, .3);
+    transition: border-color .25s ease, color .25s ease;
+}
+
+.ug-mega-foot a:hover {
+    color: var(--ug-red);
+    border-color: var(--ug-red);
+}
+
+.ug-mega-foot div {
+    display: flex;
+    gap: 22px;
+}
+
+/* ---------------------------------------------------------------
+   MENÚ MÓVIL
+--------------------------------------------------------------- */
+
+.ug-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 450;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    padding: 110px 8vw 40px;
+    overflow-y: auto;
+
+    background: #070707;
+    color: #fff;
+
+    clip-path: circle(0 at calc(100% - 6vw) 42px);
+    visibility: hidden;
+    transition:
+        clip-path .7s var(--ug-ease),
+        visibility 0s linear .7s;
+}
+
+.ug-drawer.is-open {
+    clip-path: circle(150% at calc(100% - 6vw) 42px);
+    visibility: visible;
+    transition:
+        clip-path .8s var(--ug-ease),
+        visibility 0s;
+}
+
+.ug-drawer a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.ug-drawer-link {
+    display: block;
+    padding: 12px 0;
+    font-size: clamp(34px, 9vw, 54px);
+    font-weight: 600;
+    letter-spacing: -.05em;
+    line-height: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, .09);
+}
+
+.ug-drawer-sub {
+    display: grid;
+    gap: 2px;
+    padding: 6px 0 14px;
+}
+
+.ug-drawer-sub a {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    padding: 9px 0 9px 4px;
+    font-size: 17px;
+    color: rgba(255, 255, 255, .78);
+}
+
+.ug-drawer-sub small {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--ug-red);
+}
+
+.ug-drawer-foot {
+    margin-top: auto;
+    padding-top: 24px;
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, .45);
+}
+
+/* ---------------------------------------------------------------
+   FOOTER (idéntico al de la página principal)
+--------------------------------------------------------------- */
+
+.ug-footer {
+    background: #000;
+    min-height: 100px;
+    padding: 35px 4vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #666;
+    font-size: 9px;
+    letter-spacing: .1em;
+}
+
+.ug-footer .footer-brand {
+    display: flex;
+    align-items: center;
+    color: #fff;
+}
+
+.ug-footer .footer-brand img {
+    display: block;
+    width: 125px;
+    height: auto;
+    object-fit: contain;
+}
+
+/* ---------------------------------------------------------------
+   RESPONSIVE
+--------------------------------------------------------------- */
+
+@media (max-width: 960px) {
+
+    :root {
+        --ug-header-h: 72px;
+    }
+
+    .ug-header {
+        padding: 0 5vw;
+    }
+
+    .ug-nav {
+        display: none;
+    }
+
+    .ug-brand {
+        grid-column: 2;
+        width: 108px;
+        height: 42px;
+    }
+
+    .ug-burger {
+        display: block;
+        grid-column: 3;
+    }
+
+    .ug-mega {
+        display: none;
+    }
+}
+
+@media (min-width: 961px) {
+    .ug-drawer {
+        display: none;
+    }
+}
+
+@media (max-width: 560px) {
+
+    .ug-footer {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .ug-mega,
+    .ug-drawer,
+    .ug-logo,
+    .ug-link::after {
+        transition-duration: .01ms !important;
+    }
+
+    .ug-bp g.is-on path {
+        animation-duration: .01ms !important;
+        animation-delay: 0s !important;
+    }
+}

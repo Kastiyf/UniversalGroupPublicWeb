@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { Menu, X, Box, Ruler, Layers3, Sparkles } from 'lucide-react';
+import { Box, Ruler, Layers3, Sparkles } from 'lucide-react';
 import VideoShowcase from './components/VideoShowcase.jsx';
 import InteractiveStatement from './components/InteractiveStatement.jsx';
 import ProjectTransformationGallery from './components/ProjectTransformationGallery.jsx';
 import StandInteractiveButton from './components/StandInteractiveButton.jsx';
+import SiteHeader from './components/SiteHeader.jsx';
 
 const showcase = [
   {
@@ -38,24 +39,28 @@ const socialLinks = {
 const services = [
   {
     number: '01',
+    href: '/servicios/diseno-de-stands/',
     title: 'Diseño de stands',
     text: 'Desarrollamos el concepto, la arquitectura espacial, los recorridos y la identidad visual de cada stand para ferias, exposiciones y eventos en Paraguay.',
     icon: Layers3
   },
   {
     number: '02',
+    href: '/servicios/fabricacion-de-stands/',
     title: 'Fabricación de stands',
     text: 'Llevamos el diseño a piezas reales mediante carpintería, metal, gráfica, iluminación y terminaciones preparadas para construir el espacio.',
     icon: Ruler
   },
   {
     number: '03',
+    href: '/servicios/montaje-de-stands/',
     title: 'Montaje de stands',
     text: 'Coordinamos la instalación, gráfica, detalles y puesta a punto del stand para que llegue al evento listo para funcionar.',
     icon: Box
   },
   {
     number: '04',
+    href: '/servicios/presentacion-3d/',
     title: 'Presentación 3D de stands',
     text: 'Mostramos los proyectos en 3D para recorrer el espacio, comprender la propuesta y revisar elementos antes de fabricar.',
     icon: Sparkles
@@ -63,9 +68,7 @@ const services = [
 ];
 
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
-  const [lightHeader, setLightHeader] = useState(false);
   const [processActive, setProcessActive] = useState(0);
   const showcaseRef = useRef(null);
   const videoShowcaseRef = useRef(null);
@@ -117,30 +120,8 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const updateHeader = () => {
-      const statement = document.getElementById('statement');
-      const process = document.getElementById('process');
-      const inWhiteSection = [statement, process].some((section) => {
-        if (!section) return false;
-        const rect = section.getBoundingClientRect();
-        return rect.top < window.innerHeight * 0.5 && rect.bottom > window.innerHeight * 0.5;
-      });
-      setLightHeader(inWhiteSection);
-    };
-
-    updateHeader();
-    window.addEventListener('scroll', updateHeader, { passive: true });
-    window.addEventListener('resize', updateHeader, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', updateHeader);
-      window.removeEventListener('resize', updateHeader);
-    };
-  }, []);
-
   const go = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
   };
 
   const current = showcase[showcaseIndex];
@@ -150,28 +131,7 @@ function App() {
       <div className="site">
       <div className="scroll-progress"><motion.div style={{ scaleX: progress }} /></div>
 
-      <header className={`header ${lightHeader ? 'header-light' : ''}`}>
-        <div className="header-shell">
-          <button className="brand" onClick={() => go('top')} aria-label="Universal Group">
-            <span className="brand-logo-wrap">
-              <img src="/images/universal-white.png" alt="Universal Group" className="brand-logo brand-logo-white" />
-              <img src="/images/universal-red.png" alt="" className="brand-logo brand-logo-red" />
-            </span>
-          </button>
-
-          <nav className={menuOpen ? 'nav open' : 'nav'} aria-label="Navegación principal">
-            <button onClick={() => go('work')}>Proyectos</button>
-            <button onClick={() => go('services')}>Servicios</button>
-            <button onClick={() => go('process')}>Proceso</button>
-            <button onClick={() => go('viewer')}>3D</button>
-            <button onClick={() => go('social')}>Conectemos</button>
-          </nav>
-
-          <button className="menu-button" onClick={() => setMenuOpen(v => !v)} aria-label="Menú">
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main id="top">
         <section className="showcase showcase-scroll-timeline" ref={showcaseRef} data-header-theme="dark">
@@ -259,7 +219,7 @@ function App() {
             </div>
 
             <div className="service-grid">
-              {services.map(({ number, title, text, icon: Icon }) => (
+              {services.map(({ number, href, title, text, icon: Icon }) => (
                 <motion.article
                   key={number}
                   className="service-card"
@@ -275,6 +235,7 @@ function App() {
                   <div className="service-top"><span>{number}</span><Icon size={21} strokeWidth={1.5} /></div>
                   <h3>{title}</h3>
                   <p>{text}</p>
+                  <a className="service-link" href={href} aria-label={`Ver servicio: ${title}`}>Ver servicio <span aria-hidden="true">→</span></a>
                 </motion.article>
               ))}
             </div>

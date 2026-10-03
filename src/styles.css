@@ -1786,3 +1786,49 @@
   }
 }
 
+/* =====================================================
+   SERVICIOS: ENLACE A CADA PÁGINA
+===================================================== */
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.service-link {
+  position: static;
+  align-self: flex-start;
+  margin-top: auto;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255,255,255,.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color .25s ease, border-color .25s ease;
+}
+
+.service-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.service-link span {
+  display: inline-block;
+  transition: transform .35s cubic-bezier(.22,1,.36,1);
+}
+
+.service-card:hover .service-link {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.service-card:hover .service-link span {
+  transform: translateX(5px);
+}
+
+/* El header ahora es transparente: el contenido arranca bajo él. */
+html { scroll-padding-top: 0; }
