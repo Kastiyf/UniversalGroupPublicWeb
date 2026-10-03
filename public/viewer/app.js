@@ -1515,13 +1515,21 @@ function setupCanvasClick() {
    HOTSPOT
 ===================================================== */
 
-function focusHotspot(
+function selectHotspot(
     hotspot
 ) {
 
-    if (!viewer || !hotspot) {
+    if (!hotspot || !viewer) {
         return;
     }
+
+
+    selectedHotspotId =
+        hotspot.id ||
+        null;
+
+
+    renderHotspotList();
 
 
     const target =
@@ -1537,88 +1545,33 @@ function focusHotspot(
         );
 
 
-    if (!selectedMesh) {
-        return;
+    if (selectedMesh) {
+        selectMesh(
+            selectedMesh.userData?.meshIndex
+        );
     }
 
 
-    const box =
-        new viewer.THREE.Box3()
-            .setFromObject(
-                selectedMesh
-            );
-
-
-    const center =
-        box.getCenter(
-            new viewer.THREE.Vector3()
-        );
-
-
-    const sphere =
-        box.getBoundingSphere(
-            new viewer.THREE.Sphere()
-        );
-
-
-    const radius =
-        Math.max(
-            sphere.radius,
-            0.05
-        );
-
-
-    const camera =
-        viewer.camera;
-
-
-    const currentDirection =
-        new viewer.THREE.Vector3();
-
-
-    camera.getWorldDirection(
-        currentDirection
+    focusModelOnHotspot(
+        hotspot
     );
 
 
-    currentDirection.normalize();
+    showSelectedElement(
+        hotspot
+    );
 
 
-    /*
-     * Mantenemos el mismo lado desde el que
-     * estaba mirando el usuario, pero ahora
-     * colocamos la cámara directamente de frente
-     * al elemento seleccionado.
-     */
-    const distance =
-        Math.max(
-            radius * 2.2,
-            0.5
-        );
+    showHotspotPopup(
+        hotspot
+    );
 
 
-    const cameraPosition =
-        center.clone()
-            .add(
-                currentDirection
-                    .clone()
-                    .multiplyScalar(
-                        -distance
-                    )
-            );
-
-
-    viewer.setCameraState(
-        {
-            position:
-                cameraPosition,
-
-            target:
-                center
-        },
-        true
+    focusHotspot(
+        hotspot
     );
 }
+
 
 /* =====================================================
    ELEMENTO SELECCIONADO

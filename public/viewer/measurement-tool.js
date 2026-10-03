@@ -18,7 +18,7 @@ export function createMeasurementTool(viewer, options = {}) {
      * para navegación y colisiones, pero las mediciones se
      * muestran al usuario en metros.
      */
-    const MODEL_UNITS_TO_METERS = 0.001;
+    const MODEL_UNITS_TO_METERS = 1;
 
 
     const params =
