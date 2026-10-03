@@ -1554,27 +1554,41 @@ function focusHotspot(
         );
 
 
-    const sphere =
-        box.getBoundingSphere(
-            new viewer.THREE.Sphere()
+    const size =
+        box.getSize(
+            new viewer.THREE.Vector3()
         );
 
 
-    const radius =
+    const maxSize =
         Math.max(
-            sphere.radius,
-            0.05
+            size.x,
+            size.y,
+            size.z,
+            0.01
         );
 
 
     /*
-     * Usamos la posición actual de la cámara
-     * para decidir desde qué lado mirar el objeto.
+     * Tomamos la posición actual de la cámara
+     * para conservar el lado desde donde se estaba
+     * mirando el stand.
      */
+    const cameraState =
+        viewer.getCameraState();
+
+
     const cameraPosition =
-        viewer.camera.position.clone();
+        new viewer.THREE.Vector3(
+            cameraState.position.x,
+            cameraState.position.y,
+            cameraState.position.z
+        );
 
 
+    /*
+     * Dirección desde el objeto hacia la cámara.
+     */
     const direction =
         cameraPosition
             .clone()
@@ -1582,27 +1596,8 @@ function focusHotspot(
 
 
     /*
-     * Si por alguna razón la cámara y el objeto
-     * están prácticamente en el mismo punto,
-     * usamos una dirección frontal segura.
-     */
-    if (
-        direction.lengthSq() <
-        0.000001
-    ) {
-
-        direction.set(
-            0,
-            0,
-            1
-        );
-    }
-
-
-    /*
-     * Eliminamos el componente vertical.
-     * Así la cámara queda realmente de frente,
-     * sin mirar al objeto desde arriba o desde abajo.
+     * Evitamos que la cámara quede arriba o abajo
+     * del objeto. La dejamos directamente de frente.
      */
     direction.y = 0;
 
@@ -1625,39 +1620,19 @@ function focusHotspot(
 
 
     /*
-     * FOV vertical de la cámara.
-     * 45 grados es el FOV utilizado por viewer-engine.js.
-     */
-    const fov =
-        (
-            viewer.camera.fov ||
-            45
-        ) *
-        Math.PI /
-        180;
-
-
-    /*
-     * Distancia necesaria para que el objeto
-     * completo entre en pantalla.
+     * Distancia al objeto.
+     *
+     * 1.6 permite que el objeto entre completo
+     * sin alejar demasiado la cámara.
      */
     const distance =
         Math.max(
-            radius /
-                Math.sin(
-                    fov / 2
-                ) *
-                1.15,
-
+            maxSize * 1.6,
             0.5
         );
 
 
-    /*
-     * Colocamos la cámara directamente
-     * frente al centro del objeto.
-     */
-    const newCameraPosition =
+    const newPosition =
         center.clone()
             .add(
                 direction.multiplyScalar(
@@ -1667,16 +1642,17 @@ function focusHotspot(
 
 
     /*
-     * Altura centrada con el objeto.
+     * La cámara queda a la misma altura del centro
+     * del elemento seleccionado.
      */
-    newCameraPosition.y =
+    newPosition.y =
         center.y;
 
 
     viewer.setCameraState(
         {
             position:
-                newCameraPosition,
+                newPosition,
 
             target:
                 center
@@ -1684,7 +1660,6 @@ function focusHotspot(
         true
     );
 }
-
 /* =====================================================
    ELEMENTO SELECCIONADO
 ===================================================== */
