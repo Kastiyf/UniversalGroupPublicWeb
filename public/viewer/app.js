@@ -2325,7 +2325,7 @@ function focusHotspot(
         (
             radius /
             Math.tan(
-                THREE_DEG_TO_RAD(fov / 2)
+                viewer.THREE.MathUtils.degToRad(fov / 2)
             )
         ) * 1.35;
 
@@ -3014,4 +3014,3 @@ function escapeHtml(
    La galería pública se mantiene en renders-gallery.js.
    No duplicar este sistema aquí.
 ===================================================== */
-

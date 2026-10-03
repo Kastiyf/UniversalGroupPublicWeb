@@ -1495,14 +1495,30 @@ export function createViewer(options = {}) {
 
     function getCameraState() {
 
+        const direction =
+            new THREE.Vector3();
+
+        camera.getWorldDirection(
+            direction
+        );
+
+        const target =
+            camera.position
+                .clone()
+                .add(
+                    direction.multiplyScalar(
+                        10
+                    )
+                );
+
         return {
             position:
                 camera.position.clone(),
 
-            target:
-                controls.target.clone()
+            target
         };
     }
+
 
     function setCameraState(
         state,
@@ -1549,19 +1565,25 @@ export function createViewer(options = {}) {
                 targetPosition
             );
 
+            setCameraHeight();
+
             controls.target.copy(
                 targetLook
             );
 
-            setCameraHeight();
-
             camera.lookAt(
-                controls.target
+                targetLook
             );
 
             syncAnglesFromCamera();
 
             controls.update();
+
+            camera.lookAt(
+                targetLook
+            );
+
+            syncAnglesFromCamera();
 
             return;
         }
@@ -1610,8 +1632,6 @@ export function createViewer(options = {}) {
                 controls.target
             );
 
-            syncAnglesFromCamera();
-
             controls.update();
 
             if (progress < 1) {
@@ -1619,7 +1639,33 @@ export function createViewer(options = {}) {
                 requestAnimationFrame(
                     animateCamera
                 );
+
+                return;
             }
+
+            camera.position.copy(
+                targetPosition
+            );
+
+            setCameraHeight();
+
+            controls.target.copy(
+                targetLook
+            );
+
+            camera.lookAt(
+                targetLook
+            );
+
+            syncAnglesFromCamera();
+
+            controls.update();
+
+            camera.lookAt(
+                targetLook
+            );
+
+            syncAnglesFromCamera();
         }
 
         requestAnimationFrame(
