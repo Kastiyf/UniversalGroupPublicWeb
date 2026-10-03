@@ -2273,55 +2273,83 @@ function focusHotspot(
         );
 
 
-    const size =
-        box.getSize(
-            new viewer.THREE.Vector3()
-        );
-
-
-    const maxSize =
-        Math.max(
-            size.x,
-            size.y,
-            size.z,
-            0.01
+    const sphere =
+        box.getBoundingSphere(
+            new viewer.THREE.Sphere()
         );
 
 
     /*
-     * Calculamos una distancia suficiente para
-     * mostrar completo el elemento seleccionado.
+     * Conservamos exactamente la dirección desde la que el usuario
+     * estaba mirando antes de seleccionar el objeto.
+     *
+     * Esto evita que la cámara se vaya automáticamente a un lateral
+     * dependiendo de dónde esté ubicado el elemento.
      */
+    const cameraState =
+        viewer.getCameraState();
+
+
+    const viewDirection =
+        cameraState.target
+            .clone()
+            .sub(
+                cameraState.position
+            )
+            .normalize();
+
+
+    /*
+     * Calculamos una distancia adecuada para que el objeto completo
+     * quede visible dentro del encuadre.
+     *
+     * El cálculo usa el tamaño real del objeto y el FOV de la cámara.
+     */
+    const fov =
+        viewer.camera &&
+        Number.isFinite(
+            viewer.camera.fov
+        )
+            ? viewer.camera.fov
+            : 45;
+
+
+    const radius =
+        Math.max(
+            sphere.radius,
+            0.05
+        );
+
+
+    const fitDistance =
+        (
+            radius /
+            Math.tan(
+                THREE_DEG_TO_RAD(fov / 2)
+            )
+        ) * 1.35;
+
+
     const distance =
         Math.max(
-            maxSize * 2.0,
-            1.5
+            fitDistance,
+            1.0
         );
 
 
     /*
-     * FRONT VIEW
-     *
-     * El stand se observa desde el frente,
-     * sobre el eje Z.
-     *
-     * No usamos la posición actual de la cámara
-     * porque eso provocaba que al seleccionar
-     * elementos laterales la cámara se fuera
-     * hacia un costado.
+     * La cámara se coloca sobre la misma línea de visión que ya tenía,
+     * pero apuntando al centro del objeto seleccionado.
      */
     const cameraPosition =
-        new viewer.THREE.Vector3(
-            center.x,
-            center.y,
-            center.z + distance
-        );
+        center.clone()
+            .sub(
+                viewDirection.multiplyScalar(
+                    distance
+                )
+            );
 
 
-    /*
-     * Miramos directamente al centro
-     * del elemento seleccionado.
-     */
     viewer.setCameraState(
         {
             position:
