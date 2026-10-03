@@ -1106,6 +1106,29 @@ async function initViewer() {
 
 
         /*
+         * Cada GLB puede venir en m, cm o mm. Se calibra la unidad con
+         * las medidas reales del stand para que mediciones y velocidad
+         * de movimiento sean correctas sin importar cómo se exportó.
+         */
+        if (typeof viewer.calibrateUnits === 'function') {
+
+            viewer.calibrateUnits(
+                Math.max(
+                    Number(standData.ancho) || 0,
+                    Number(standData.profundidad) || 0
+                )
+            );
+
+            console.log(
+                '[UniversalStand] Unidad del modelo → metros:',
+                viewer.unitsToMeters,
+                '| tamaño del modelo:',
+                viewer.modelSize
+            );
+        }
+
+
+        /*
          * Si el administrador guardó una vista
          * de inicio, esa vista tiene prioridad.
          */
@@ -2300,40 +2323,94 @@ function focusHotspot(
 
 
     /*
-     * Calculamos una distancia adecuada para que el objeto completo
-     * quede visible dentro del encuadre.
+     * Distancia exacta para que la CAJA del objeto quede completa en
+     * pantalla mirando desde la misma dirección que tenía el usuario.
      *
-     * El cálculo usa el tamaño real del objeto y el FOV de la cámara.
+     * Se proyectan las 8 esquinas de la caja sobre los ejes de la cámara
+     * (derecha / arriba / adelante) y se exige que cada una entre en el
+     * FOV vertical y en el horizontal (que depende del aspect ratio).
+     * Así un objeto grande no se corta y uno pequeño no queda lejos.
      */
-    const fov =
+    const THREE = viewer.THREE;
+
+    const verticalFov =
         viewer.camera &&
-        Number.isFinite(
-            viewer.camera.fov
-        )
+        Number.isFinite(viewer.camera.fov)
             ? viewer.camera.fov
             : 45;
 
+    const aspect =
+        viewer.camera &&
+        Number.isFinite(viewer.camera.aspect) &&
+        viewer.camera.aspect > 0
+            ? viewer.camera.aspect
+            : 1.6;
 
-    const radius =
-        Math.max(
-            sphere.radius,
-            0.05
-        );
+    const FRAMING_MARGIN = 1.25;
 
+    const tanV =
+        Math.tan(
+            THREE.MathUtils.degToRad(verticalFov / 2)
+        ) / FRAMING_MARGIN;
 
-    const fitDistance =
-        (
-            radius /
-            Math.tan(
-                viewer.THREE.MathUtils.degToRad(fov / 2)
+    const tanH = tanV * aspect;
+
+    const forward = viewDirection.clone();
+
+    let right =
+        new THREE.Vector3()
+            .crossVectors(
+                forward,
+                new THREE.Vector3(0, 1, 0)
+            );
+
+    if (right.lengthSq() < 1e-8) {
+        right.set(1, 0, 0);
+    }
+
+    right.normalize();
+
+    const up =
+        new THREE.Vector3()
+            .crossVectors(
+                right,
+                forward
             )
-        ) * 1.35;
+            .normalize();
 
+    let distance =
+        Math.max(sphere.radius, 1e-6) * 0.5;
 
-    const distance =
+    let maxForward = -Infinity;
+
+    for (let i = 0; i < 8; i++) {
+
+        const corner =
+            new THREE.Vector3(
+                i & 1 ? box.max.x : box.min.x,
+                i & 2 ? box.max.y : box.min.y,
+                i & 4 ? box.max.z : box.min.z
+            ).sub(center);
+
+        const cx = Math.abs(corner.dot(right));
+        const cy = Math.abs(corner.dot(up));
+        const cz = corner.dot(forward);
+
+        maxForward = Math.max(maxForward, cz);
+
+        distance =
+            Math.max(
+                distance,
+                cx / tanH - cz,
+                cy / tanV - cz
+            );
+    }
+
+    /* La cámara nunca debe quedar dentro de la caja del objeto. */
+    distance =
         Math.max(
-            fitDistance,
-            1.0
+            distance,
+            maxForward + sphere.radius * 0.15
         );
 
 
@@ -2344,10 +2421,20 @@ function focusHotspot(
     const cameraPosition =
         center.clone()
             .sub(
-                viewDirection.multiplyScalar(
+                viewDirection.clone().multiplyScalar(
                     distance
                 )
             );
+
+
+    if (
+        !Number.isFinite(distance) ||
+        !Number.isFinite(cameraPosition.x) ||
+        !Number.isFinite(cameraPosition.y) ||
+        !Number.isFinite(cameraPosition.z)
+    ) {
+        return;
+    }
 
 
     viewer.setCameraState(

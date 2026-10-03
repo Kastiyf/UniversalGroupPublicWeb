@@ -20,6 +20,21 @@ export function createMeasurementTool(viewer, options = {}) {
      */
     const MODEL_UNITS_TO_METERS = 0.001;
 
+    /*
+     * La unidad real depende de cada modelo (m, cm o mm). El viewer la
+     * detecta/calibra al cargar el GLB y la expone como unitsToMeters.
+     * MODEL_UNITS_TO_METERS queda solo como respaldo si el viewer
+     * no la informa.
+     */
+    function getUnitsToMeters() {
+
+        const detected = Number(viewer.unitsToMeters);
+
+        return Number.isFinite(detected) && detected > 0
+            ? detected
+            : MODEL_UNITS_TO_METERS;
+    }
+
 
     const params =
         new URLSearchParams(
@@ -203,7 +218,7 @@ export function createMeasurementTool(viewer, options = {}) {
                         start.distanceTo(
                             end
                         ) *
-                        MODEL_UNITS_TO_METERS;
+                        getUnitsToMeters();
 
 
                     const firstMarker =
@@ -639,7 +654,7 @@ export function createMeasurementTool(viewer, options = {}) {
             start.distanceTo(
                 end
             ) *
-            MODEL_UNITS_TO_METERS;
+            getUnitsToMeters();
 
 
         const firstMarker =

@@ -186,6 +186,78 @@ export function createViewer(options = {}) {
     let modelSize = new THREE.Vector3(1, 1, 1);
     let modelCenter = new THREE.Vector3();
 
+    /* ------------------------------------------------------------
+       UNIDAD REAL DEL MODELO
+       Cada GLB puede venir en una unidad distinta (metros, cm o mm).
+       Se detecta al cargar el modelo y se afina con las medidas
+       reales del stand (ancho/profundidad) en calibrateUnits().
+       Las constantes de velocidad de arriba están pensadas para un
+       modelo en centímetros (salida actual del conversor), por lo
+       que en ese caso el factor de velocidad es exactamente 1.
+    ------------------------------------------------------------ */
+
+    const CM_TO_METERS = 0.01;
+    let unitsToMeters = CM_TO_METERS;
+
+    function guessUnitsFromSize(size) {
+
+        const footprint = Math.max(size.x, size.z);
+
+        if (!Number.isFinite(footprint) || footprint <= 0) {
+            return CM_TO_METERS;
+        }
+
+        if (footprint <= 80) {
+            return 1;
+        }
+
+        if (footprint <= 2000) {
+            return CM_TO_METERS;
+        }
+
+        return 0.001;
+    }
+
+    function calibrateUnits(referenceMeters) {
+
+        const reference = Number(referenceMeters);
+        const footprint = Math.max(modelSize.x, modelSize.z);
+
+        if (
+            !model ||
+            !Number.isFinite(reference) || reference <= 0 ||
+            !Number.isFinite(footprint) || footprint <= 0
+        ) {
+            return unitsToMeters;
+        }
+
+        const ratio = reference / footprint;
+
+        let best = unitsToMeters;
+        let bestError = Infinity;
+
+        [1, CM_TO_METERS, 0.001].forEach(candidate => {
+
+            const error = Math.abs(Math.log(ratio / candidate));
+
+            if (error < bestError) {
+                bestError = error;
+                best = candidate;
+            }
+        });
+
+        /* Si ninguna unidad se parece (más de ~3x), no se toca. */
+        if (bestError < Math.log(3.2)) {
+            unitsToMeters = best;
+        }
+
+        return unitsToMeters;
+    }
+
+    function getSpeedScale() {
+        return CM_TO_METERS / unitsToMeters;
+    }
+
     const meshes = [];
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -278,6 +350,25 @@ export function createViewer(options = {}) {
         pitch = Math.asin(THREE.MathUtils.clamp(direction.y, -1, 1));
 
         clampPitch();
+    }
+
+    function clampCameraHeight(y) {
+
+        const maxHeight = model
+            ? Math.max(DEFAULT_MAX_CAMERA_HEIGHT, modelSize.y * 2.5)
+            : DEFAULT_MAX_CAMERA_HEIGHT;
+
+        if (!Number.isFinite(y)) {
+            return WALK_HEIGHT;
+        }
+
+        return THREE.MathUtils.clamp(y, MIN_CAMERA_HEIGHT, maxHeight);
+    }
+
+    let cameraAnimationToken = 0;
+
+    function cancelCameraAnimation() {
+        cameraAnimationToken++;
     }
 
     function setCameraHeight() {
@@ -383,6 +474,8 @@ export function createViewer(options = {}) {
             return;
         }
 
+        cancelCameraAnimation();
+
         const length = Math.hypot(forward, strafe);
 
         if (length > 0) {
@@ -395,7 +488,8 @@ export function createViewer(options = {}) {
                 ? RUN_MULTIPLIER
                 : 1;
 
-        const distance = MOVE_SPEED * speedMultiplier * delta;
+        const distance =
+            MOVE_SPEED * getSpeedScale() * speedMultiplier * delta;
 
         if (forward !== 0) {
             moveForward(forward * distance);
@@ -409,6 +503,7 @@ export function createViewer(options = {}) {
             camera.position.y +=
                 vertical *
                 VERTICAL_SPEED *
+                getSpeedScale() *
                 speedMultiplier *
                 delta;
 
@@ -471,6 +566,8 @@ export function createViewer(options = {}) {
             return;
         }
 
+        cancelCameraAnimation();
+
         looking = true;
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
@@ -512,8 +609,10 @@ export function createViewer(options = {}) {
 
         event.preventDefault();
 
+        cancelCameraAnimation();
+
         moveForward(
-            (event.deltaY > 0 ? -1 : 1) * WHEEL_SPEED
+            (event.deltaY > 0 ? -1 : 1) * WHEEL_SPEED * getSpeedScale()
         );
 
         setCameraHeight();
@@ -1210,6 +1309,8 @@ export function createViewer(options = {}) {
                 new THREE.Vector3()
             );
 
+        unitsToMeters = guessUnitsFromSize(modelSize);
+
         const contactRadius =
             Math.max(
                 modelSize.x,
@@ -1493,32 +1594,91 @@ export function createViewer(options = {}) {
         resize
     );
 
+    /*
+     * Estado de cámara.
+     *
+     * La orientación REAL de la cámara es yaw/pitch (es lo que aplica
+     * updateCameraRotation() en cada frame). Por eso:
+     *  - al guardar se lee la dirección real desde la cámara y se
+     *    devuelve target = posición + dirección * distancia, además
+     *    de direction/yaw/pitch;
+     *  - al restaurar la dirección se calcula UNA vez desde
+     *    (target - position) y se aplica directamente a yaw/pitch,
+     *    sin depender de que la altura recortada, controls.update()
+     *    u OrbitControls la modifiquen después.
+     */
+
+    function getLookDistance() {
+        return Math.max(
+            10,
+            Math.max(modelSize.x, modelSize.y, modelSize.z) * 0.25
+        );
+    }
+
     function getCameraState() {
 
-        const direction =
-            new THREE.Vector3();
+        camera.updateMatrixWorld(true);
 
-        camera.getWorldDirection(
-            direction
-        );
+        const direction = new THREE.Vector3();
 
-        const target =
-            camera.position
-                .clone()
-                .add(
-                    direction.multiplyScalar(
-                        10
-                    )
-                );
+        camera.getWorldDirection(direction);
+        direction.normalize();
+
+        const target = camera.position
+            .clone()
+            .addScaledVector(direction, getLookDistance());
 
         return {
-            position:
-                camera.position.clone(),
-
-            target
+            position: camera.position.clone(),
+            target,
+            direction,
+            yaw,
+            pitch
         };
     }
 
+    function toVector3(value, fallback) {
+
+        if (value instanceof THREE.Vector3) {
+            return value.clone();
+        }
+
+        return new THREE.Vector3(
+            Number.isFinite(Number(value?.x)) ? Number(value.x) : fallback.x,
+            Number.isFinite(Number(value?.y)) ? Number(value.y) : fallback.y,
+            Number.isFinite(Number(value?.z)) ? Number(value.z) : fallback.z
+        );
+    }
+
+    function anglesFromDirection(direction) {
+
+        const dir = direction.clone().normalize();
+
+        const limit = THREE.MathUtils.degToRad(82);
+
+        return {
+            yaw: Math.atan2(-dir.x, -dir.z),
+            pitch: THREE.MathUtils.clamp(
+                Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1)),
+                -limit,
+                limit
+            )
+        };
+    }
+
+    function applyCameraPose(position, newYaw, newPitch) {
+
+        camera.position.copy(position);
+        camera.position.y = clampCameraHeight(camera.position.y);
+
+        yaw = newYaw;
+        pitch = newPitch;
+
+        clampPitch();
+        updateCameraRotation();
+
+        camera.updateMatrixWorld(true);
+    }
 
     function setCameraState(
         state,
@@ -1529,148 +1689,86 @@ export function createViewer(options = {}) {
             return;
         }
 
-        const targetPosition =
-            state.position instanceof
-            THREE.Vector3
-                ? state.position.clone()
-                : new THREE.Vector3(
-                    state.position?.x ??
-                        camera.position.x,
+        cancelCameraAnimation();
 
-                    state.position?.y ??
-                        camera.position.y,
+        const endPosition = toVector3(
+            state.position,
+            camera.position
+        );
 
-                    state.position?.z ??
-                        camera.position.z
-                );
+        let direction = null;
 
-        const targetLook =
-            state.target instanceof
-            THREE.Vector3
-                ? state.target.clone()
-                : new THREE.Vector3(
-                    state.target?.x ??
-                        controls.target.x,
+        if (state.direction) {
+            direction = toVector3(state.direction, new THREE.Vector3());
+        } else {
+            const look = toVector3(state.target, controls.target);
+            direction = look.sub(endPosition);
+        }
 
-                    state.target?.y ??
-                        controls.target.y,
+        if (!Number.isFinite(direction.lengthSq()) || direction.lengthSq() < 1e-12) {
+            camera.getWorldDirection(direction);
+        }
 
-                    state.target?.z ??
-                        controls.target.z
-                );
+        const end = anglesFromDirection(direction);
+
+        endPosition.y = clampCameraHeight(endPosition.y);
 
         if (!smooth) {
 
-            camera.position.copy(
-                targetPosition
-            );
-
-            setCameraHeight();
-
-            controls.target.copy(
-                targetLook
-            );
-
-            camera.lookAt(
-                targetLook
-            );
-
-            syncAnglesFromCamera();
+            applyCameraPose(endPosition, end.yaw, end.pitch);
 
             controls.update();
 
-            camera.lookAt(
-                targetLook
-            );
-
-            syncAnglesFromCamera();
+            /* controls.update() puede rozar la orientación: se reafirma. */
+            applyCameraPose(endPosition, end.yaw, end.pitch);
 
             return;
         }
 
-        const startPosition =
-            camera.position.clone();
+        const startPosition = camera.position.clone();
+        const startYaw = yaw;
+        const startPitch = pitch;
 
-        const startTarget =
-            controls.target.clone();
+        /* Giro por el camino más corto. */
+        let deltaYaw = end.yaw - startYaw;
+        deltaYaw = Math.atan2(Math.sin(deltaYaw), Math.cos(deltaYaw));
 
-        const startTime =
-            performance.now();
+        const deltaPitch = end.pitch - startPitch;
 
-        const duration =
-            500;
+        const token = ++cameraAnimationToken;
+        const startTime = performance.now();
+        const duration = 500;
 
         function animateCamera(now) {
 
-            const progress =
-                Math.min(
-                    (now - startTime) /
-                        duration,
-                    1
-                );
-
-            const eased =
-                progress *
-                progress *
-                (3 - 2 * progress);
-
-            camera.position.lerpVectors(
-                startPosition,
-                targetPosition,
-                eased
-            );
-
-            controls.target.lerpVectors(
-                startTarget,
-                targetLook,
-                eased
-            );
-
-            setCameraHeight();
-
-            camera.lookAt(
-                controls.target
-            );
-
-            controls.update();
-
-            if (progress < 1) {
-
-                requestAnimationFrame(
-                    animateCamera
-                );
-
+            if (token !== cameraAnimationToken) {
                 return;
             }
 
-            camera.position.copy(
-                targetPosition
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = progress * progress * (3 - 2 * progress);
+
+            const position = new THREE.Vector3().lerpVectors(
+                startPosition,
+                endPosition,
+                eased
             );
 
-            setCameraHeight();
-
-            controls.target.copy(
-                targetLook
+            applyCameraPose(
+                position,
+                startYaw + deltaYaw * eased,
+                startPitch + deltaPitch * eased
             );
 
-            camera.lookAt(
-                targetLook
-            );
+            if (progress < 1) {
+                requestAnimationFrame(animateCamera);
+                return;
+            }
 
-            syncAnglesFromCamera();
-
-            controls.update();
-
-            camera.lookAt(
-                targetLook
-            );
-
-            syncAnglesFromCamera();
+            applyCameraPose(endPosition, end.yaw, end.pitch);
         }
 
-        requestAnimationFrame(
-            animateCamera
-        );
+        requestAnimationFrame(animateCamera);
     }
 
     function zoomBy(multiplier) {
@@ -1808,6 +1906,12 @@ export function createViewer(options = {}) {
         get modelCenter() {
             return modelCenter.clone();
         },
+
+        get unitsToMeters() {
+            return unitsToMeters;
+        },
+
+        calibrateUnits,
 
         meshes,
 
