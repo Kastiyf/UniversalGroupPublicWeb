@@ -2242,36 +2242,84 @@ function focusHotspot(
     }
 
 
-    /*
-     * Al seleccionar un elemento interactivo no hacemos zoom
-     * hacia el objeto. La cámara vuelve directamente a la
-     * vista inicial guardada por el administrador.
-     */
-    if (
-        hasValidNavigation(
-            standData.navigation
-        )
-    ) {
-
-        viewer.setCameraState(
-            standData.navigation,
-            true
+    const target =
+        getHotspotWorldPosition(
+            hotspot
         );
 
+
+    const selectedMesh =
+        getHotspotMesh(
+            hotspot,
+            target
+        );
+
+
+    if (!selectedMesh) {
         return;
     }
 
 
-    /*
-     * Si el proyecto todavía no tiene una vista inicial guardada,
-     * dejamos la cámara en el encuadre normal del modelo.
-     */
-    viewer.fitCamera(
-        1.20
+    const box =
+        new viewer.THREE.Box3()
+            .setFromObject(
+                selectedMesh
+            );
+
+
+    const center =
+        box.getCenter(
+            new viewer.THREE.Vector3()
+        );
+
+
+    const size =
+        box.getSize(
+            new viewer.THREE.Vector3()
+        );
+
+
+    const maxSize =
+        Math.max(
+            size.x,
+            size.y,
+            size.z,
+            0.01
+        );
+
+
+    const distance =
+        maxSize * 2.4;
+
+
+    const direction =
+        new viewer.THREE.Vector3(
+            1,
+            0.55,
+            1
+        ).normalize();
+
+
+    const cameraPosition =
+        center.clone()
+            .add(
+                direction.multiplyScalar(
+                    distance
+                )
+            );
+
+
+    viewer.setCameraState(
+        {
+            position:
+                cameraPosition,
+
+            target:
+                center
+        },
+        true
     );
 }
-
-
 /* =====================================================
    LISTA HOTSPOTS
 ===================================================== */
