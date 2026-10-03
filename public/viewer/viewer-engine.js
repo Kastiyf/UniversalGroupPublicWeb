@@ -302,7 +302,6 @@ export function createViewer(options = {}) {
        MOVIMIENTO + COLISIONES
     ============================================================ */
 
-    // Primer impacto contra geometría real (ignora las aristas dibujadas)
     function firstMeshHit(hits) {
 
         const hit = hits.find(h => !h.object.userData.isEdgeLine);
@@ -311,7 +310,6 @@ export function createViewer(options = {}) {
             return null;
         }
 
-        // El mesh auxiliar de cara posterior se resuelve a su mesh original
         if (hit.object.userData.isBackFace) {
             hit.object = hit.object.parent;
             hit.isBackFace = true;
@@ -377,6 +375,7 @@ export function createViewer(options = {}) {
         if (keys.has('KeyS') || keys.has('ArrowDown')) forward -= 1;
         if (keys.has('KeyD') || keys.has('ArrowRight')) strafe += 1;
         if (keys.has('KeyA') || keys.has('ArrowLeft')) strafe -= 1;
+
         if (keys.has('KeyE')) vertical += 1;
         if (keys.has('KeyQ')) vertical -= 1;
 
@@ -398,24 +397,43 @@ export function createViewer(options = {}) {
 
         const distance = MOVE_SPEED * speedMultiplier * delta;
 
-        if (forward !== 0) moveForward(forward * distance);
-        if (strafe !== 0) moveRight(strafe * distance);
+        if (forward !== 0) {
+            moveForward(forward * distance);
+        }
+
+        if (strafe !== 0) {
+            moveRight(strafe * distance);
+        }
 
         if (vertical !== 0) {
-            camera.position.y += vertical * VERTICAL_SPEED * speedMultiplier * delta;
+            camera.position.y +=
+                vertical *
+                VERTICAL_SPEED *
+                speedMultiplier *
+                delta;
+
             setCameraHeight();
         }
     }
 
 
     /* ============================================================
-       EVENTOS (todos se limpian en destroy())
+       EVENTOS
     ============================================================ */
 
     const ALLOWED_KEYS = new Set([
-        'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyQ',
-        'ShiftLeft', 'ShiftRight',
-        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'
+        'KeyW',
+        'KeyA',
+        'KeyS',
+        'KeyD',
+        'KeyE',
+        'KeyQ',
+        'ShiftLeft',
+        'ShiftRight',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
     ]);
 
     function isEditableTarget(target) {
@@ -433,7 +451,9 @@ export function createViewer(options = {}) {
         }
 
         return Boolean(
-            element.closest('input, textarea, select, button, [contenteditable="true"]')
+            element.closest(
+                'input, textarea, select, button, [contenteditable="true"]'
+            )
         );
     }
 
@@ -463,6 +483,7 @@ export function createViewer(options = {}) {
     }
 
     function onMouseUp(event) {
+
         if (event.button === 2) {
             looking = false;
         }
@@ -491,19 +512,58 @@ export function createViewer(options = {}) {
 
         event.preventDefault();
 
-        moveForward((event.deltaY > 0 ? -1 : 1) * WHEEL_SPEED);
+        moveForward(
+            (event.deltaY > 0 ? -1 : 1) * WHEEL_SPEED
+        );
 
         setCameraHeight();
         updateCameraRotation();
     }
 
+
+    /* ============================================================
+       TECLADO
+       Se acepta tanto event.code como event.key.
+       Esto evita problemas con distintos layouts de teclado.
+    ============================================================ */
+
+    function normalizeMovementKey(event) {
+
+        if (event.code && ALLOWED_KEYS.has(event.code)) {
+            return event.code;
+        }
+
+        const key = String(event.key || '').toLowerCase();
+
+        const keyMap = {
+            w: 'KeyW',
+            a: 'KeyA',
+            s: 'KeyS',
+            d: 'KeyD',
+            q: 'KeyQ',
+            e: 'KeyE',
+            arrowup: 'ArrowUp',
+            arrowdown: 'ArrowDown',
+            arrowleft: 'ArrowLeft',
+            arrowright: 'ArrowRight'
+        };
+
+        return keyMap[key] || null;
+    }
+
     function onKeyDown(event) {
 
-        if (isEditableTarget(event.target) || !ALLOWED_KEYS.has(event.code)) {
+        if (isEditableTarget(event.target)) {
             return;
         }
 
-        keys.add(event.code);
+        const movementKey = normalizeMovementKey(event);
+
+        if (!movementKey) {
+            return;
+        }
+
+        keys.add(movementKey);
 
         event.preventDefault();
         event.stopPropagation();
@@ -515,7 +575,11 @@ export function createViewer(options = {}) {
             return;
         }
 
-        keys.delete(event.code);
+        const movementKey = normalizeMovementKey(event);
+
+        if (movementKey) {
+            keys.delete(movementKey);
+        }
     }
 
     function onBlur() {
@@ -523,8 +587,11 @@ export function createViewer(options = {}) {
         looking = false;
     }
 
-    // Con DEBUG_MATERIALS = true: clic izquierdo sobre una parte imprime
-    // en consola su nombre, material y si estás viendo su cara posterior.
+
+    /* ============================================================
+       DEBUG DE MATERIALES
+    ============================================================ */
+
     function onDebugClick(event) {
 
         const hit = raycast(event);
@@ -541,8 +608,10 @@ export function createViewer(options = {}) {
             'CLIC ->',
             'objeto:', hit.object.userData.originalName,
             '| material:', material?.name || '(sin nombre)',
-            '| color: #' + (material?.color?.getHexString(THREE.SRGBColorSpace) ?? '?'),
-            '| cara vista:', hit.isBackFace ? 'POSTERIOR' : 'frontal'
+            '| color: #' +
+                (material?.color?.getHexString(THREE.SRGBColorSpace) ?? '?'),
+            '| cara vista:',
+            hit.isBackFace ? 'POSTERIOR' : 'frontal'
         );
     }
 
@@ -553,11 +622,27 @@ export function createViewer(options = {}) {
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('contextmenu', onContextMenu);
     canvas.addEventListener('wheel', onWheel, { passive: false });
+
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('blur', onBlur);
-    document.addEventListener('keydown', onKeyDown, { passive: false, capture: true });
-    document.addEventListener('keyup', onKeyUp, { capture: true });
+
+    document.addEventListener(
+        'keydown',
+        onKeyDown,
+        {
+            passive: false,
+            capture: true
+        }
+    );
+
+    document.addEventListener(
+        'keyup',
+        onKeyUp,
+        {
+            capture: true
+        }
+    );
 
     syncAnglesFromCamera();
     setCameraHeight();
@@ -566,22 +651,26 @@ export function createViewer(options = {}) {
 
     /* ============================================================
        ILUMINACIÓN ESTILO SKETCHUP
-       Desde three.js r155 las luces son físicas: la intensidad
-       efectiva de ambiente/hemisferio se divide entre π. Por eso
-       se multiplican por Math.PI.
-       IMPORTANTE: la suma sobre una cara horizontal debe ser <= 1.0.
-       Si pasa de 1, el canal dominante se satura y los colores se
-       lavan (rojo oscuro -> rosa). Ajusta las constantes de arriba.
     ============================================================ */
 
-    scene.add(new THREE.AmbientLight(0xffffff, Math.PI * AMBIENT_INTENSITY));
+    scene.add(
+        new THREE.AmbientLight(
+            0xffffff,
+            Math.PI * AMBIENT_INTENSITY
+        )
+    );
 
-    // Luz que sigue a la cámara (apunta hacia donde mira)
     scene.add(camera);
 
-    const headLight = new THREE.DirectionalLight(0xffffff, Math.PI * HEADLIGHT_INTENSITY);
+    const headLight = new THREE.DirectionalLight(
+        0xffffff,
+        Math.PI * HEADLIGHT_INTENSITY
+    );
+
     headLight.position.set(0, 0, 0);
+
     headLight.target.position.set(0, 0, -1);
+
     camera.add(headLight);
     camera.add(headLight.target);
 
@@ -591,8 +680,16 @@ export function createViewer(options = {}) {
     ============================================================ */
 
     const floorGeometry = new THREE.PlaneGeometry(200, 200);
-    const floorMaterial = new THREE.MeshLambertMaterial({ color: 0xd8d8d8 });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+
+    const floorMaterial =
+        new THREE.MeshLambertMaterial({
+            color: 0xd8d8d8
+        });
+
+    const floor = new THREE.Mesh(
+        floorGeometry,
+        floorMaterial
+    );
 
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.002;
@@ -601,40 +698,84 @@ export function createViewer(options = {}) {
 
 
     /* ============================================================
-       SOMBRA DE CONTACTO (disco oscuro semitransparente)
+       SOMBRA DE CONTACTO
     ============================================================ */
 
-    const contactShadowCanvas = document.createElement('canvas');
+    const contactShadowCanvas =
+        document.createElement('canvas');
+
     contactShadowCanvas.width = 256;
     contactShadowCanvas.height = 256;
 
-    const contactShadowContext = contactShadowCanvas.getContext('2d');
-    const contactGradient = contactShadowContext.createRadialGradient(
-        128, 128, 0, 128, 128, 128
+    const contactShadowContext =
+        contactShadowCanvas.getContext('2d');
+
+    const contactGradient =
+        contactShadowContext.createRadialGradient(
+            128,
+            128,
+            0,
+            128,
+            128,
+            128
+        );
+
+    contactGradient.addColorStop(
+        0.0,
+        'rgba(0, 0, 0, 0.35)'
     );
 
-    contactGradient.addColorStop(0.0, 'rgba(0, 0, 0, 0.35)');
-    contactGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.15)');
-    contactGradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+    contactGradient.addColorStop(
+        0.5,
+        'rgba(0, 0, 0, 0.15)'
+    );
 
-    contactShadowContext.fillStyle = contactGradient;
-    contactShadowContext.fillRect(0, 0, 256, 256);
+    contactGradient.addColorStop(
+        1.0,
+        'rgba(0, 0, 0, 0.0)'
+    );
 
-    const contactShadowTexture = new THREE.CanvasTexture(contactShadowCanvas);
-    contactShadowTexture.colorSpace = THREE.SRGBColorSpace;
+    contactShadowContext.fillStyle =
+        contactGradient;
 
-    const contactShadowMaterial = new THREE.MeshBasicMaterial({
-        map: contactShadowTexture,
-        transparent: true,
-        depthWrite: false,
-        opacity: 0.85
-    });
+    contactShadowContext.fillRect(
+        0,
+        0,
+        256,
+        256
+    );
 
-    const contactShadowGeometry = new THREE.PlaneGeometry(1, 1);
-    const contactShadow = new THREE.Mesh(contactShadowGeometry, contactShadowMaterial);
+    const contactShadowTexture =
+        new THREE.CanvasTexture(
+            contactShadowCanvas
+        );
 
-    contactShadow.rotation.x = -Math.PI / 2;
-    contactShadow.position.y = 0.001;
+    contactShadowTexture.colorSpace =
+        THREE.SRGBColorSpace;
+
+    const contactShadowMaterial =
+        new THREE.MeshBasicMaterial({
+            map: contactShadowTexture,
+            transparent: true,
+            depthWrite: false,
+            opacity: 0.85
+        });
+
+    const contactShadowGeometry =
+        new THREE.PlaneGeometry(1, 1);
+
+    const contactShadow =
+        new THREE.Mesh(
+            contactShadowGeometry,
+            contactShadowMaterial
+        );
+
+    contactShadow.rotation.x =
+        -Math.PI / 2;
+
+    contactShadow.position.y =
+        0.001;
+
     contactShadow.visible = false;
 
     scene.add(contactShadow);
@@ -645,125 +786,214 @@ export function createViewer(options = {}) {
     ============================================================ */
 
     const loader = new GLTFLoader();
-    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    // Cache de EdgesGeometry: si varios meshes comparten geometría
-    // (sillas, paneles repetidos), las aristas se calculan una sola vez.
+    const maxAnisotropy =
+        renderer.capabilities.getMaxAnisotropy();
+
     const edgeCache = new WeakMap();
-    const edgeGeometries = [];   // para liberarlas en destroy()
+    const edgeGeometries = [];
     const loggedMaterials = new Set();
 
 
-    /* ------------------------------------------------------------
-       Conversión a MeshLambertMaterial (estilo SketchUp)
-       - Respeta texturas originales.
-       - Los grises sin textura se fuerzan a blanco puro.
-         OJO: el análisis HSL se hace en sRGB. En espacio lineal un
-         gris claro tiene luminosidad baja y no se detectaba.
-    ------------------------------------------------------------ */
+    /* ============================================================
+       MATERIALES
+    ============================================================ */
 
-    function prepareMaterial(material, forceFront = false) {
+    function prepareMaterial(
+        material,
+        forceFront = false
+    ) {
 
         if (!material) {
             return material;
         }
 
-        if (DEBUG_MATERIALS && !loggedMaterials.has(material.uuid)) {
+        if (
+            DEBUG_MATERIALS &&
+            !loggedMaterials.has(material.uuid)
+        ) {
+
             loggedMaterials.add(material.uuid);
+
             console.log(
                 'MATERIAL:',
                 material.name || '(sin nombre)',
                 material.color
-                    ? '#' + material.color.getHexString(THREE.SRGBColorSpace)
+                    ? '#' +
+                      material.color.getHexString(
+                          THREE.SRGBColorSpace
+                      )
                     : 'sin color',
-                material.map ? 'con textura' : 'sin textura',
+                material.map
+                    ? 'con textura'
+                    : 'sin textura',
                 'side=' + material.side
             );
         }
 
-        [material.map, material.emissiveMap].forEach(texture => {
-            if (texture) {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                texture.anisotropy = maxAnisotropy;
+        [
+            material.map,
+            material.emissiveMap
+        ].forEach(texture => {
 
-                texture.minFilter =
-                    THREE.LinearMipmapLinearFilter;
-
-                texture.magFilter =
-                    THREE.LinearFilter;
-
-                texture.generateMipmaps =
-                    true;
-
-                texture.needsUpdate = true;
+            if (!texture) {
+                return;
             }
+
+            texture.colorSpace =
+                THREE.SRGBColorSpace;
+
+            texture.anisotropy =
+                maxAnisotropy;
+
+            texture.minFilter =
+                THREE.LinearMipmapLinearFilter;
+
+            texture.magFilter =
+                THREE.LinearFilter;
+
+            texture.generateMipmaps =
+                true;
+
+            texture.needsUpdate =
+                true;
         });
 
-        const baseColor = material.color
-            ? material.color.clone()
-            : new THREE.Color(0xffffff);
+        const baseColor =
+            material.color
+                ? material.color.clone()
+                : new THREE.Color(0xffffff);
 
-        const hasOverride = MATERIAL_OVERRIDES[material.name] !== undefined;
+        const hasOverride =
+            MATERIAL_OVERRIDES[
+                material.name
+            ] !== undefined;
 
         if (hasOverride) {
 
-            baseColor.set(MATERIAL_OVERRIDES[material.name]);
+            baseColor.set(
+                MATERIAL_OVERRIDES[
+                    material.name
+                ]
+            );
 
         } else if (!material.map) {
 
-            const hsl = { h: 0, s: 0, l: 0 };
-            baseColor.getHSL(hsl, THREE.SRGBColorSpace);
+            const hsl = {
+                h: 0,
+                s: 0,
+                l: 0
+            };
 
-            // Poca saturación + luminosidad media/alta = gris o blanco apagado
-            const isGrayish = hsl.s < 0.12 && hsl.l > 0.4 && hsl.l < 0.98;
+            baseColor.getHSL(
+                hsl,
+                THREE.SRGBColorSpace
+            );
+
+            const isGrayish =
+                hsl.s < 0.12 &&
+                hsl.l > 0.4 &&
+                hsl.l < 0.98;
 
             if (isGrayish) {
-                baseColor.setRGB(1, 1, 1);
+                baseColor.setRGB(
+                    1,
+                    1,
+                    1
+                );
             }
         }
 
-        const rawOpacity = material.opacity !== undefined ? material.opacity : 1.0;
+        const rawOpacity =
+            material.opacity !== undefined
+                ? material.opacity
+                : 1.0;
+
         const isReallyTransparent =
-            (material.transparent || false) && rawOpacity < OPAQUE_THRESHOLD;
+            (material.transparent || false) &&
+            rawOpacity < OPAQUE_THRESHOLD;
 
-        const lambert = new THREE.MeshLambertMaterial({
-            color: baseColor,
-            map: material.map || null,
-            emissive: material.emissive
-                ? material.emissive.clone()
-                : new THREE.Color(0x000000),
-            emissiveMap: material.emissiveMap || null,
-            transparent: isReallyTransparent,
-            opacity: isReallyTransparent ? rawOpacity : 1.0,
-            side: forceFront
-                ? THREE.FrontSide
-                : FORCE_DOUBLE_SIDE
-                    ? THREE.DoubleSide
-                    : (material.side || THREE.FrontSide),
-            alphaMap: material.alphaMap || null,
-            alphaTest: material.alphaTest || 0,
-            depthWrite: material.depthWrite !== undefined ? material.depthWrite : true,
-            depthTest: material.depthTest !== undefined ? material.depthTest : true
-        });
+        const lambert =
+            new THREE.MeshLambertMaterial({
+                color: baseColor,
+                map: material.map || null,
 
-        // Saturación ligera solo a colores que ya tienen color propio
-        // (con SATURATION_BOOST = 1.0 no cambia nada)
-        if (!hasOverride && SATURATION_BOOST !== 1.0) {
+                emissive:
+                    material.emissive
+                        ? material.emissive.clone()
+                        : new THREE.Color(0x000000),
 
-            const hsl = { h: 0, s: 0, l: 0 };
-            lambert.color.getHSL(hsl, THREE.SRGBColorSpace);
+                emissiveMap:
+                    material.emissiveMap || null,
+
+                transparent:
+                    isReallyTransparent,
+
+                opacity:
+                    isReallyTransparent
+                        ? rawOpacity
+                        : 1.0,
+
+                side:
+                    forceFront
+                        ? THREE.FrontSide
+                        : FORCE_DOUBLE_SIDE
+                            ? THREE.DoubleSide
+                            : (
+                                material.side ||
+                                THREE.FrontSide
+                            ),
+
+                alphaMap:
+                    material.alphaMap || null,
+
+                alphaTest:
+                    material.alphaTest || 0,
+
+                depthWrite:
+                    material.depthWrite !== undefined
+                        ? material.depthWrite
+                        : true,
+
+                depthTest:
+                    material.depthTest !== undefined
+                        ? material.depthTest
+                        : true
+            });
+
+        if (
+            !hasOverride &&
+            SATURATION_BOOST !== 1.0
+        ) {
+
+            const hsl = {
+                h: 0,
+                s: 0,
+                l: 0
+            };
+
+            lambert.color.getHSL(
+                hsl,
+                THREE.SRGBColorSpace
+            );
 
             if (hsl.s > 0.1) {
+
                 lambert.color.setHSL(
                     hsl.h,
-                    Math.min(hsl.s * SATURATION_BOOST, 1.0),
+                    Math.min(
+                        hsl.s *
+                        SATURATION_BOOST,
+                        1.0
+                    ),
                     hsl.l,
                     THREE.SRGBColorSpace
                 );
             }
         }
 
-        lambert.name = material.name || '';
+        lambert.name =
+            material.name || '';
 
         material.dispose();
 
@@ -771,109 +1001,176 @@ export function createViewer(options = {}) {
     }
 
 
-    /* ------------------------------------------------------------
-       Aristas finas (LineSegments con cache por geometría)
-    ------------------------------------------------------------ */
+    /* ============================================================
+       ARISTAS
+    ============================================================ */
 
-    function createEdgeLines(geometry, thresholdAngle = 60) {
+    function createEdgeLines(
+        geometry,
+        thresholdAngle = 60
+    ) {
 
-        let edgesGeometry = edgeCache.get(geometry);
+        let edgesGeometry =
+            edgeCache.get(geometry);
 
         if (!edgesGeometry) {
-            edgesGeometry = new THREE.EdgesGeometry(geometry, thresholdAngle);
-            edgeCache.set(geometry, edgesGeometry);
-            edgeGeometries.push(edgesGeometry);
+
+            edgesGeometry =
+                new THREE.EdgesGeometry(
+                    geometry,
+                    thresholdAngle
+                );
+
+            edgeCache.set(
+                geometry,
+                edgesGeometry
+            );
+
+            edgeGeometries.push(
+                edgesGeometry
+            );
         }
 
-        const edgeLines = new THREE.LineSegments(
-            edgesGeometry,
-            new THREE.LineBasicMaterial({
-                color: 0x000000,
-                transparent: true,
-                opacity: 0.2,
-                depthWrite: false
-            })
-        );
+        const edgeLines =
+            new THREE.LineSegments(
+                edgesGeometry,
+                new THREE.LineBasicMaterial({
+                    color: 0x000000,
+                    transparent: true,
+                    opacity: 0.2,
+                    depthWrite: false
+                })
+            );
 
-        edgeLines.userData.isEdgeLine = true;
+        edgeLines.userData.isEdgeLine =
+            true;
+
         edgeLines.renderOrder = 1;
 
         return edgeLines;
     }
 
 
-    // Materiales compartidos para las caras posteriores
-    const backMaterial = new THREE.MeshLambertMaterial({
-        color: BACK_FACE_COLOR,
-        side: THREE.BackSide
-    });
+    const backMaterial =
+        new THREE.MeshLambertMaterial({
+            color: BACK_FACE_COLOR,
+            side: THREE.BackSide
+        });
 
-    const hiddenMaterial = new THREE.MeshBasicMaterial({ visible: false });
+    const hiddenMaterial =
+        new THREE.MeshBasicMaterial({
+            visible: false
+        });
 
     function shouldSplitBack(material) {
-        return SPLIT_BACK_FACES &&
+
+        return (
+            SPLIT_BACK_FACES &&
             material &&
             material.side === THREE.DoubleSide &&
             !material.transparent &&
-            !BACK_FACE_EXCEPT.includes(material.name);
+            !BACK_FACE_EXCEPT.includes(
+                material.name
+            )
+        );
     }
 
     function prepareModel(object) {
 
         meshes.length = 0;
 
-        // Se recogen primero: al añadir meshes auxiliares durante el
-        // recorrido se volverían a procesar.
         const found = [];
 
         object.traverse(child => {
+
             if (child.isMesh) {
                 found.push(child);
             }
         });
 
-        found.forEach((child, index) => {
+        found.forEach(
+            (child, index) => {
 
-            child.userData.meshIndex = index;
-            child.userData.originalName = child.name || `Objeto ${index + 1}`;
+                child.userData.meshIndex =
+                    index;
 
-            const originals = Array.isArray(child.material)
-                ? child.material
-                : [child.material];
+                child.userData.originalName =
+                    child.name ||
+                    `Objeto ${index + 1}`;
 
-            const splits = originals.map(shouldSplitBack);
+                const originals =
+                    Array.isArray(
+                        child.material
+                    )
+                        ? child.material
+                        : [child.material];
 
-            const converted = originals.map(
-                (material, i) => prepareMaterial(material, splits[i])
-            );
+                const splits =
+                    originals.map(
+                        shouldSplitBack
+                    );
 
-            child.material = Array.isArray(child.material)
-                ? converted
-                : converted[0];
+                const converted =
+                    originals.map(
+                        (material, i) =>
+                            prepareMaterial(
+                                material,
+                                splits[i]
+                            )
+                    );
 
-            // Mesh auxiliar que pinta solo el lado posterior
-            if (splits.some(Boolean) && child.geometry) {
+                child.material =
+                    Array.isArray(
+                        child.material
+                    )
+                        ? converted
+                        : converted[0];
 
-                const backMesh = new THREE.Mesh(
-                    child.geometry,
-                    Array.isArray(child.material)
-                        ? splits.map(s => s ? backMaterial : hiddenMaterial)
-                        : backMaterial
-                );
+                if (
+                    splits.some(Boolean) &&
+                    child.geometry
+                ) {
 
-                backMesh.userData.isBackFace = true;
+                    const backMesh =
+                        new THREE.Mesh(
+                            child.geometry,
+                            Array.isArray(
+                                child.material
+                            )
+                                ? splits.map(
+                                    s =>
+                                        s
+                                            ? backMaterial
+                                            : hiddenMaterial
+                                )
+                                : backMaterial
+                        );
 
-                child.add(backMesh);
+                    backMesh.userData.isBackFace =
+                        true;
+
+                    child.add(backMesh);
+                }
+
+                if (child.geometry) {
+
+                    child.add(
+                        createEdgeLines(
+                            child.geometry,
+                            60
+                        )
+                    );
+                }
+
+                meshes.push(child);
             }
-
-            if (child.geometry) {
-                child.add(createEdgeLines(child.geometry, 60));
-            }
-
-            meshes.push(child);
-        });
+        );
     }
 
+
+    /* ============================================================
+       CENTRADO DEL MODELO
+    ============================================================ */
 
     function centerModel() {
 
@@ -881,25 +1178,58 @@ export function createViewer(options = {}) {
             return null;
         }
 
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
+        const box =
+            new THREE.Box3()
+                .setFromObject(model);
 
-        model.position.x -= center.x;
-        model.position.z -= center.z;
-        model.position.y -= box.min.y;
+        const center =
+            box.getCenter(
+                new THREE.Vector3()
+            );
 
-        const finalBox = new THREE.Box3().setFromObject(model);
+        model.position.x -=
+            center.x;
 
-        modelSize = finalBox.getSize(new THREE.Vector3());
-        modelCenter = finalBox.getCenter(new THREE.Vector3());
+        model.position.z -=
+            center.z;
 
-        // Ajustar la sombra de contacto al tamaño real del modelo
-        const contactRadius = Math.max(modelSize.x, modelSize.z) * 1.05;
+        model.position.y -=
+            box.min.y;
 
-        contactShadow.scale.set(contactRadius, contactRadius, 1);
-        contactShadow.position.x = 0;
-        contactShadow.position.z = 0;
-        contactShadow.visible = true;
+        const finalBox =
+            new THREE.Box3()
+                .setFromObject(model);
+
+        modelSize =
+            finalBox.getSize(
+                new THREE.Vector3()
+            );
+
+        modelCenter =
+            finalBox.getCenter(
+                new THREE.Vector3()
+            );
+
+        const contactRadius =
+            Math.max(
+                modelSize.x,
+                modelSize.z
+            ) * 1.05;
+
+        contactShadow.scale.set(
+            contactRadius,
+            contactRadius,
+            1
+        );
+
+        contactShadow.position.x =
+            0;
+
+        contactShadow.position.z =
+            0;
+
+        contactShadow.visible =
+            true;
 
         return {
             box: finalBox,
@@ -909,24 +1239,52 @@ export function createViewer(options = {}) {
     }
 
 
-    function fitCamera(multiplier = 1.45) {
+    function fitCamera(
+        multiplier = 1.45
+    ) {
 
         if (!model) {
             return;
         }
 
-        const maxSize = Math.max(modelSize.x, modelSize.y, modelSize.z);
-        const distance = maxSize * multiplier;
+        const maxSize =
+            Math.max(
+                modelSize.x,
+                modelSize.y,
+                modelSize.z
+            );
 
-        camera.position.set(distance, WALK_HEIGHT, distance);
+        const distance =
+            maxSize * multiplier;
 
-        camera.near = Math.max(maxSize / 1000, 0.01);
-        camera.far = Math.max(maxSize * 100, 1000);
+        camera.position.set(
+            distance,
+            WALK_HEIGHT,
+            distance
+        );
+
+        camera.near =
+            Math.max(
+                maxSize / 1000,
+                0.01
+            );
+
+        camera.far =
+            Math.max(
+                maxSize * 100,
+                1000
+            );
 
         camera.updateProjectionMatrix();
 
-        controls.minDistance = 0.5;
-        controls.maxDistance = Math.max(maxSize * 20, 1000);
+        controls.minDistance =
+            0.5;
+
+        controls.maxDistance =
+            Math.max(
+                maxSize * 20,
+                1000
+            );
 
         syncAnglesFromCamera();
         setCameraHeight();
@@ -934,48 +1292,72 @@ export function createViewer(options = {}) {
     }
 
 
-    const modelPromise = new Promise((resolve, reject) => {
+    /* ============================================================
+       GLB
+    ============================================================ */
 
-        loader.load(
+    const modelPromise =
+        new Promise(
+            (resolve, reject) => {
 
-            modelUrl,
+                loader.load(
 
-            gltf => {
+                    modelUrl,
 
-                try {
+                    gltf => {
 
-                    model = gltf.scene;
-                    scene.add(model);
+                        try {
 
-                    prepareModel(model);
+                            model =
+                                gltf.scene;
 
-                    const info = centerModel();
+                            scene.add(
+                                model
+                            );
 
-                    fitCamera();
+                            prepareModel(
+                                model
+                            );
 
-                    resolve({
-                        model,
-                        size: info.size,
-                        center: info.center,
-                        meshes
-                    });
+                            const info =
+                                centerModel();
 
-                } catch (error) {
+                            fitCamera();
 
-                    console.error('Error preparando GLB:', error);
-                    reject(error);
-                }
-            },
+                            resolve({
+                                model,
+                                size:
+                                    info.size,
+                                center:
+                                    info.center,
+                                meshes
+                            });
 
-            undefined,
+                        } catch (error) {
 
-            error => {
+                            console.error(
+                                'Error preparando GLB:',
+                                error
+                            );
 
-                console.error('Error cargando GLB:', error);
-                reject(error);
+                            reject(error);
+                        }
+                    },
+
+                    undefined,
+
+                    error => {
+
+                        console.error(
+                            'Error cargando GLB:',
+                            error
+                        );
+
+                        reject(error);
+                    }
+                );
             }
         );
-    });
 
 
     /* ============================================================
@@ -988,14 +1370,32 @@ export function createViewer(options = {}) {
             return null;
         }
 
-        const rect = canvas.getBoundingClientRect();
+        const rect =
+            canvas.getBoundingClientRect();
 
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        mouse.x =
+            (
+                (event.clientX - rect.left) /
+                rect.width
+            ) * 2 - 1;
 
-        raycaster.setFromCamera(mouse, camera);
+        mouse.y =
+            -(
+                (event.clientY - rect.top) /
+                rect.height
+            ) * 2 + 1;
 
-        return firstMeshHit(raycaster.intersectObject(model, true));
+        raycaster.setFromCamera(
+            mouse,
+            camera
+        );
+
+        return firstMeshHit(
+            raycaster.intersectObject(
+                model,
+                true
+            )
+        );
     }
 
     function localPositionFromHit(hit) {
@@ -1004,17 +1404,25 @@ export function createViewer(options = {}) {
             return null;
         }
 
-        return model.worldToLocal(hit.point.clone());
+        return model.worldToLocal(
+            hit.point.clone()
+        );
     }
 
-    function worldPositionFromLocal(position) {
+    function worldPositionFromLocal(
+        position
+    ) {
 
         if (!position || !model) {
             return null;
         }
 
         return model.localToWorld(
-            new THREE.Vector3(position.x, position.y, position.z)
+            new THREE.Vector3(
+                position.x,
+                position.y,
+                position.z
+            )
         );
     }
 
@@ -1022,123 +1430,255 @@ export function createViewer(options = {}) {
         return meshes[index] || null;
     }
 
-    function createLabel(text, className = 'viewer-hotspot-label') {
+    function createLabel(
+        text,
+        className = 'viewer-hotspot-label'
+    ) {
 
-        const element = document.createElement('div');
-        element.className = className;
-        element.textContent = text;
+        const element =
+            document.createElement(
+                'div'
+            );
 
-        const object = new CSS2DObject(element);
+        element.className =
+            className;
 
-        return { object, element };
+        element.textContent =
+            text;
+
+        const object =
+            new CSS2DObject(
+                element
+            );
+
+        return {
+            object,
+            element
+        };
     }
 
     function resize() {
 
-        const newWidth = Math.max(container.clientWidth, 1);
-        const newHeight = Math.max(container.clientHeight, 1);
+        const newWidth =
+            Math.max(
+                container.clientWidth,
+                1
+            );
 
-        camera.aspect = newWidth / newHeight;
+        const newHeight =
+            Math.max(
+                container.clientHeight,
+                1
+            );
+
+        camera.aspect =
+            newWidth / newHeight;
+
         camera.updateProjectionMatrix();
 
-        renderer.setSize(newWidth, newHeight, false);
-        labelRenderer.setSize(newWidth, newHeight);
+        renderer.setSize(
+            newWidth,
+            newHeight,
+            false
+        );
+
+        labelRenderer.setSize(
+            newWidth,
+            newHeight
+        );
     }
 
-    window.addEventListener('resize', resize);
+    window.addEventListener(
+        'resize',
+        resize
+    );
 
     function getCameraState() {
+
         return {
-            position: camera.position.clone(),
-            target: controls.target.clone()
+            position:
+                camera.position.clone(),
+
+            target:
+                controls.target.clone()
         };
     }
 
-    function setCameraState(state, smooth = true) {
+    function setCameraState(
+        state,
+        smooth = true
+    ) {
 
         if (!state) {
             return;
         }
 
-        const targetPosition = state.position instanceof THREE.Vector3
-            ? state.position.clone()
-            : new THREE.Vector3(
-                state.position?.x ?? camera.position.x,
-                state.position?.y ?? camera.position.y,
-                state.position?.z ?? camera.position.z
-            );
+        const targetPosition =
+            state.position instanceof
+            THREE.Vector3
+                ? state.position.clone()
+                : new THREE.Vector3(
+                    state.position?.x ??
+                        camera.position.x,
 
-        const targetLook = state.target instanceof THREE.Vector3
-            ? state.target.clone()
-            : new THREE.Vector3(
-                state.target?.x ?? controls.target.x,
-                state.target?.y ?? controls.target.y,
-                state.target?.z ?? controls.target.z
-            );
+                    state.position?.y ??
+                        camera.position.y,
+
+                    state.position?.z ??
+                        camera.position.z
+                );
+
+        const targetLook =
+            state.target instanceof
+            THREE.Vector3
+                ? state.target.clone()
+                : new THREE.Vector3(
+                    state.target?.x ??
+                        controls.target.x,
+
+                    state.target?.y ??
+                        controls.target.y,
+
+                    state.target?.z ??
+                        controls.target.z
+                );
 
         if (!smooth) {
 
-            camera.position.copy(targetPosition);
-            controls.target.copy(targetLook);
+            camera.position.copy(
+                targetPosition
+            );
+
+            controls.target.copy(
+                targetLook
+            );
+
             setCameraHeight();
-            camera.lookAt(controls.target);
+
+            camera.lookAt(
+                controls.target
+            );
+
             syncAnglesFromCamera();
+
             controls.update();
+
             return;
         }
 
-        const startPosition = camera.position.clone();
-        const startTarget = controls.target.clone();
-        const startTime = performance.now();
-        const duration = 500;
+        const startPosition =
+            camera.position.clone();
+
+        const startTarget =
+            controls.target.clone();
+
+        const startTime =
+            performance.now();
+
+        const duration =
+            500;
 
         function animateCamera(now) {
 
-            const progress = Math.min((now - startTime) / duration, 1);
-            const eased = progress * progress * (3 - 2 * progress);
+            const progress =
+                Math.min(
+                    (now - startTime) /
+                        duration,
+                    1
+                );
 
-            camera.position.lerpVectors(startPosition, targetPosition, eased);
-            controls.target.lerpVectors(startTarget, targetLook, eased);
+            const eased =
+                progress *
+                progress *
+                (3 - 2 * progress);
+
+            camera.position.lerpVectors(
+                startPosition,
+                targetPosition,
+                eased
+            );
+
+            controls.target.lerpVectors(
+                startTarget,
+                targetLook,
+                eased
+            );
 
             setCameraHeight();
-            camera.lookAt(controls.target);
+
+            camera.lookAt(
+                controls.target
+            );
+
             syncAnglesFromCamera();
+
             controls.update();
 
             if (progress < 1) {
-                requestAnimationFrame(animateCamera);
+
+                requestAnimationFrame(
+                    animateCamera
+                );
             }
         }
 
-        requestAnimationFrame(animateCamera);
+        requestAnimationFrame(
+            animateCamera
+        );
     }
 
     function zoomBy(multiplier) {
 
-        if (!Number.isFinite(multiplier) || multiplier <= 0) {
+        if (
+            !Number.isFinite(
+                multiplier
+            ) ||
+            multiplier <= 0
+        ) {
             return;
         }
 
-        const offset = camera.position.clone().sub(controls.target);
-        const currentDistance = offset.length();
+        const offset =
+            camera.position
+                .clone()
+                .sub(
+                    controls.target
+                );
+
+        const currentDistance =
+            offset.length();
 
         if (!currentDistance) {
             return;
         }
 
-        const distance = THREE.MathUtils.clamp(
-            currentDistance * multiplier,
-            controls.minDistance,
-            controls.maxDistance
+        const distance =
+            THREE.MathUtils.clamp(
+                currentDistance *
+                    multiplier,
+                controls.minDistance,
+                controls.maxDistance
+            );
+
+        offset.normalize()
+            .multiplyScalar(
+                distance
+            );
+
+        camera.position.copy(
+            controls.target
+                .clone()
+                .add(offset)
         );
 
-        offset.normalize().multiplyScalar(distance);
-
-        camera.position.copy(controls.target.clone().add(offset));
-
         setCameraHeight();
-        camera.lookAt(controls.target);
+
+        camera.lookAt(
+            controls.target
+        );
+
         syncAnglesFromCamera();
+
         controls.update();
     }
 
@@ -1152,27 +1692,45 @@ export function createViewer(options = {}) {
 
     function animate() {
 
-        animationFrame = requestAnimationFrame(animate);
+        animationFrame =
+            requestAnimationFrame(
+                animate
+            );
 
-        const now = performance.now();
+        const now =
+            performance.now();
 
         if (!lastTime) {
             lastTime = now;
         }
 
-        const delta = Math.min((now - lastTime) / 1000, 0.1);
+        const delta =
+            Math.min(
+                (now - lastTime) / 1000,
+                0.1
+            );
 
         lastTime = now;
 
         checkFPS(delta);
+
         moveByKeyboard(delta);
+
         setCameraHeight();
+
         updateCameraRotation();
 
         controls.update();
 
-        renderer.render(scene, camera);
-        labelRenderer.render(scene, camera);
+        renderer.render(
+            scene,
+            camera
+        );
+
+        labelRenderer.render(
+            scene,
+            camera
+        );
     }
 
     animate();
@@ -1220,71 +1778,156 @@ export function createViewer(options = {}) {
 
         destroy() {
 
-            cancelAnimationFrame(animationFrame);
+            cancelAnimationFrame(
+                animationFrame
+            );
 
-            window.removeEventListener('resize', resize);
-            window.removeEventListener('mouseup', onMouseUp);
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('blur', onBlur);
-            document.removeEventListener('keydown', onKeyDown, { capture: true });
-            document.removeEventListener('keyup', onKeyUp, { capture: true });
-            canvas.removeEventListener('mousedown', onMouseDown);
-            canvas.removeEventListener('contextmenu', onContextMenu);
-            canvas.removeEventListener('wheel', onWheel);
-            canvas.removeEventListener('click', onDebugClick);
+            window.removeEventListener(
+                'resize',
+                resize
+            );
+
+            window.removeEventListener(
+                'mouseup',
+                onMouseUp
+            );
+
+            window.removeEventListener(
+                'mousemove',
+                onMouseMove
+            );
+
+            window.removeEventListener(
+                'blur',
+                onBlur
+            );
+
+            document.removeEventListener(
+                'keydown',
+                onKeyDown,
+                { capture: true }
+            );
+
+            document.removeEventListener(
+                'keyup',
+                onKeyUp,
+                { capture: true }
+            );
+
+            canvas.removeEventListener(
+                'mousedown',
+                onMouseDown
+            );
+
+            canvas.removeEventListener(
+                'contextmenu',
+                onContextMenu
+            );
+
+            canvas.removeEventListener(
+                'wheel',
+                onWheel
+            );
+
+            canvas.removeEventListener(
+                'click',
+                onDebugClick
+            );
 
             backMaterial.dispose();
             hiddenMaterial.dispose();
 
             keys.clear();
+
             looking = false;
 
             controls.dispose();
+
             renderer.dispose();
 
-            canvas.parentNode?.removeChild(canvas);
-            labelRenderer.domElement.parentNode?.removeChild(labelRenderer.domElement);
+            canvas.parentNode
+                ?.removeChild(
+                    canvas
+                );
+
+            labelRenderer
+                .domElement
+                .parentNode
+                ?.removeChild(
+                    labelRenderer.domElement
+                );
 
             if (model) {
 
-                model.traverse(child => {
+                model.traverse(
+                    child => {
 
-                    if (!child.isMesh) {
-                        return;
-                    }
-
-                    child.geometry?.dispose();
-
-                    const materials = Array.isArray(child.material)
-                        ? child.material
-                        : [child.material];
-
-                    materials.forEach(material => {
-
-                        if (!material) {
+                        if (!child.isMesh) {
                             return;
                         }
 
-                        Object.keys(material).forEach(key => {
-                            const value = material[key];
-                            if (value && value.isTexture) {
-                                value.dispose();
+                        child.geometry
+                            ?.dispose();
+
+                        const materials =
+                            Array.isArray(
+                                child.material
+                            )
+                                ? child.material
+                                : [child.material];
+
+                        materials.forEach(
+                            material => {
+
+                                if (!material) {
+                                    return;
+                                }
+
+                                Object.keys(
+                                    material
+                                ).forEach(
+                                    key => {
+
+                                        const value =
+                                            material[
+                                                key
+                                            ];
+
+                                        if (
+                                            value &&
+                                            value.isTexture
+                                        ) {
+
+                                            value.dispose();
+                                        }
+                                    }
+                                );
+
+                                material.dispose();
                             }
-                        });
+                        );
 
-                        material.dispose();
-                    });
+                        child.children
+                            .forEach(
+                                line => {
 
-                    // Material de las aristas (cada LineSegments tiene el suyo)
-                    child.children.forEach(line => {
-                        if (line.isLineSegments) {
-                            line.material?.dispose();
-                        }
-                    });
-                });
+                                    if (
+                                        line.isLineSegments
+                                    ) {
+
+                                        line.material
+                                            ?.dispose();
+                                    }
+                                }
+                            );
+                    }
+                );
             }
 
-            edgeGeometries.forEach(geometry => geometry.dispose());
+            edgeGeometries.forEach(
+                geometry =>
+                    geometry.dispose()
+            );
 
             floorGeometry.dispose();
             floorMaterial.dispose();
