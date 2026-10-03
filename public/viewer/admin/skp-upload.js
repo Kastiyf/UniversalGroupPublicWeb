@@ -369,6 +369,92 @@ function getModelName(
 }
 
 
+async function saveModelUrlOnline(project, modelUrl) {
+
+    if (!project || !modelUrl) {
+        throw new Error(
+            'Faltan el proyecto o la URL del modelo 3D.'
+        );
+    }
+
+    const payload = {
+        modelo: modelUrl,
+        updated_at: new Date().toISOString()
+    };
+
+    const candidates = [];
+
+    if (project.slug) {
+        candidates.push({
+            field: 'slug',
+            value: project.slug
+        });
+    }
+
+    if (project.id) {
+        candidates.push({
+            field: 'id',
+            value: project.id
+        });
+    }
+
+    if (!candidates.length) {
+        throw new Error(
+            'El proyecto no tiene slug ni ID para guardar el modelo.'
+        );
+    }
+
+    let lastError = null;
+
+    for (const candidate of candidates) {
+        try {
+            const response =
+                await supabase
+                    .from('projects')
+                    .update(payload)
+                    .eq(
+                        candidate.field,
+                        candidate.value
+                    )
+                    .select('id, slug, modelo')
+                    .maybeSingle();
+
+            if (response.error) {
+                lastError = response.error;
+                continue;
+            }
+
+            if (!response.data) {
+                lastError = new Error(
+                    'Supabase no devolvió el proyecto después de guardar el modelo.'
+                );
+                continue;
+            }
+
+            if (
+                String(response.data.modelo || '').trim() !==
+                String(modelUrl).trim()
+            ) {
+                lastError = new Error(
+                    'Supabase respondió, pero no confirmó la URL del GLB guardada.'
+                );
+                continue;
+            }
+
+            return response.data;
+
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw (
+        lastError ||
+        new Error('No se pudo guardar el modelo 3D en Supabase.')
+    );
+}
+
+
 function dispatchProjectUpdate(
     project
 ) {
@@ -664,8 +750,18 @@ uploadButton?.addEventListener(
              * se conservan exactamente como estaban.
              */
 
+            /*
+             * Guardamos primero la URL del GLB en Supabase y la verificamos.
+             * No dependemos de localStorage para la persistencia del modelo.
+             */
+            const savedModel =
+                await saveModelUrlOnline(
+                    project,
+                    result.modelUrl
+                );
+
             project.modelo =
-                result.modelUrl;
+                savedModel.modelo;
 
             if (
                 typeof result.skpUrl ===
