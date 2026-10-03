@@ -2892,6 +2892,20 @@ function setupViewerHelp() {
     }
 
 
+    const start =
+        document.getElementById(
+            'startViewerHelp'
+        );
+
+    if (start) {
+
+        start.addEventListener(
+            'click',
+            closeHelp
+        );
+    }
+
+
     if (help) {
 
         help.addEventListener(
@@ -2908,6 +2922,45 @@ function setupViewerHelp() {
             }
         );
     }
+
+
+    /*
+     * Esc siempre cierra la guía, aunque el foco esté en un botón
+     * (el manejador general de teclado ignora los botones).
+     * Se escucha en fase de captura y se detiene la propagación para
+     * que ese mismo Esc no cierre también otra cosa por detrás
+     * (medición o ventana de un elemento).
+     */
+    document.addEventListener(
+        'keydown',
+        event => {
+
+            if (
+                event.key !== 'Escape' ||
+                !help ||
+                !help.classList.contains(
+                    'visible'
+                )
+            ) {
+
+                return;
+            }
+
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            closeHelp();
+        },
+        true
+    );
+
+
+    /*
+     * La guía de controles se muestra apenas el visor está listo,
+     * para que la persona vea cómo moverse antes de explorar.
+     */
+    openHelp();
 
 
     window.closeViewerHelp =

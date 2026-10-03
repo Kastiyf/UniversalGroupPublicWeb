@@ -397,7 +397,9 @@
 
 
     <!-- =====================================================
-         AYUDA
+         AYUDA / GUÍA DE CONTROLES
+         Se muestra automáticamente al entrar al visor.
+         Se cierra con Esc, con la X o con el botón "Entendido".
     ====================================================== -->
 
     <div
@@ -417,146 +419,233 @@
                 id="closeViewerHelp"
                 class="viewer-help-close"
                 type="button"
-                aria-label="Cerrar"
+                aria-label="Cerrar guía de controles"
+                title="Cerrar (Esc)"
             >
                 ×
             </button>
 
 
-            <div class="viewer-help-kicker">
-                NAVEGACIÓN
+            <header class="viewer-help-header">
+
+                <div class="viewer-help-kicker">
+                    GUÍA RÁPIDA
+                </div>
+
+                <h2 id="viewerHelpTitle">
+                    Cómo moverte por el stand
+                </h2>
+
+                <p class="viewer-help-intro">
+                    Recorré el stand en 3D como si caminaras por él.
+                    Podés volver a ver esta guía con el botón
+                    <b>? Controles</b>.
+                </p>
+
+            </header>
+
+
+            <div class="viewer-help-body">
+
+                <!-- ===== CAMINAR ===== -->
+
+                <section class="help-section help-section-wide">
+
+                    <h3>
+                        <span class="help-step">1</span>
+                        Caminar
+                    </h3>
+
+                    <ul class="help-list help-list-cols">
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <span class="help-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Moverte (WASD)</strong>
+                            <span>También las flechas del teclado.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <span class="help-keys"><kbd class="wide">Shift</kbd></span><i class="help-plus">+</i><span class="help-keys"><kbd>W</kbd></span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Caminar más rápido</strong>
+                            <span>Mantené Shift apretada mientras te movés.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <span class="help-keys"><kbd>Q</kbd><kbd>E</kbd></span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Bajar (Q) y subir (E)</strong>
+                            <span>Cambia la altura de la cámara.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <svg class="help-mouse" viewBox="0 0 28 40" aria-hidden="true">
+                                <rect x="1.5" y="1.5" width="25" height="37" rx="12.5" fill="#fff" stroke="#15171b" stroke-width="2"/>
+                                
+                                
+                                <path d="M2 17 H26 M14 2 V17" stroke="#15171b" stroke-width="2" fill="none"/>
+                                <rect x="12" y="5.5" width="4" height="8" rx="2" fill="#15171b" stroke="#15171b" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <div class="help-text">
+                            <strong>Rueda del mouse</strong>
+                            <span>Adelante para avanzar, atrás para retroceder.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-touch-only">
+                        <div class="help-visual">
+                            <span class="help-keys"><kbd>+</kbd><kbd>−</kbd></span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Botones + y − de abajo</strong>
+                            <span>Acercan y alejan la vista.</span>
+                        </div>
+                    </li>
+
+                    </ul>
+
+                </section>
+
+
+                <!-- ===== MIRAR ===== -->
+
+                <section class="help-section help-section-wide">
+
+                    <h3>
+                        <span class="help-step">2</span>
+                        Mirar alrededor
+                    </h3>
+
+                    <ul class="help-list help-list-cols">
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <svg class="help-mouse" viewBox="0 0 28 40" aria-hidden="true">
+                                <rect x="1.5" y="1.5" width="25" height="37" rx="12.5" fill="#fff" stroke="#15171b" stroke-width="2"/>
+                                <path d="M14 2 V17 H2 V14.5 A12 12.5 0 0 1 14 2 Z" fill="#15171b"/>
+                                
+                                <path d="M2 17 H26 M14 2 V17" stroke="#15171b" stroke-width="2" fill="none"/>
+                                <rect x="12" y="5.5" width="4" height="8" rx="2" fill="#fff" stroke="#15171b" stroke-width="1.5"/>
+                            </svg><i class="help-plus">+</i><span class="help-drag">arrastrar</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Clic izquierdo y arrastrar</strong>
+                            <span>Gira la vista alrededor del stand.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-desktop-only">
+                        <div class="help-visual">
+                            <svg class="help-mouse" viewBox="0 0 28 40" aria-hidden="true">
+                                <rect x="1.5" y="1.5" width="25" height="37" rx="12.5" fill="#fff" stroke="#15171b" stroke-width="2"/>
+                                
+                                <path d="M14 2 V17 H26 V14.5 A12 12.5 0 0 0 14 2 Z" fill="#15171b"/>
+                                <path d="M2 17 H26 M14 2 V17" stroke="#15171b" stroke-width="2" fill="none"/>
+                                <rect x="12" y="5.5" width="4" height="8" rx="2" fill="#fff" stroke="#15171b" stroke-width="1.5"/>
+                            </svg><i class="help-plus">+</i><span class="help-drag">arrastrar</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Clic derecho y arrastrar</strong>
+                            <span>Mirás hacia otro lado sin moverte del lugar.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row help-touch-only">
+                        <div class="help-visual">
+                            <span class="help-drag help-finger">1 dedo</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Arrastrá con un dedo</strong>
+                            <span>Gira la vista alrededor del stand.</span>
+                        </div>
+                    </li>
+
+                    </ul>
+
+                </section>
+
+
+                <!-- ===== HERRAMIENTAS ===== -->
+
+                <section class="help-section help-section-wide">
+
+                    <h3>
+                        <span class="help-step">3</span>
+                        Herramientas
+                    </h3>
+
+                    <ul class="help-list help-list-cols">
+
+                    <li class="help-row ">
+                        <div class="help-visual">
+                            <span class="help-chip">1</span><span class="help-chip">2</span><span class="help-chip">3</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Elementos numerados</strong>
+                            <span>Elegí uno en el panel de la derecha y la cámara se acerca.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row ">
+                        <div class="help-visual">
+                            <span class="help-chip help-chip-wide">↔ Medir</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Medir distancias</strong>
+                            <span>Tocá Medir y hacé clic en dos puntos del modelo.</span>
+                        </div>
+                    </li>
+
+                    <li class="help-row ">
+                        <div class="help-visual">
+                            <span class="help-chip help-chip-wide">⌂ Vista inicial</span>
+                        </div>
+                        <div class="help-text">
+                            <strong>Volver al inicio</strong>
+                            <span>Vuelve a donde empezaste<span class="help-desktop-only"> (tecla <kbd class="small">H</kbd>)</span>.</span>
+                        </div>
+                    </li>
+
+
+                    </ul>
+
+                </section>
+
             </div>
 
 
-            <h2 id="viewerHelpTitle">
-                Controles del visor
-            </h2>
+            <footer class="viewer-help-footer">
 
+                <button
+                    id="startViewerHelp"
+                    class="viewer-help-start"
+                    type="button"
+                >
+                    Entendido, explorar el stand
+                </button>
 
-            <p class="viewer-help-intro">
-                Explorá el stand en 3D usando el mouse,
-                el panel lateral y los controles inferiores.
-            </p>
-
-
-            <div class="viewer-help-grid">
-
-                <div>
-                    <strong>
-                        Rotar
-                    </strong>
-
-                    <span>
-                        Arrastrá con el botón izquierdo.
+                <span class="viewer-help-hint">
+                    <span class="help-desktop-only">
+                        Cerrar con <kbd class="small">Esc</kbd> o con la ×
                     </span>
-                </div>
-
-
-                <div>
-                    <strong>
-                        Zoom
-                    </strong>
-
-                    <span>
-                        Usá la rueda del mouse o los botones + y −.
+                    <span class="help-touch-only">
+                        Cerrar con la ×
                     </span>
-                </div>
+                </span>
 
-
-                <div>
-                    <strong>
-                        Desplazar
-                    </strong>
-
-                    <span>
-                        Arrastrá con el botón derecho.
-                    </span>
-                </div>
-
-
-                <div>
-                    <strong>
-                        Hotspots
-                    </strong>
-
-                    <span>
-                        Seleccioná un elemento numerado
-                        para ver su información.
-                    </span>
-                </div>
-
-
-                <!-- =========================================
-                     MEDICIÓN
-                ========================================== -->
-
-                <div class="viewer-help-measure">
-
-                    <strong>
-                        Medición 3D
-                    </strong>
-
-                    <span>
-                        Activá el botón Medir.
-                        Hacé un clic sobre el primer punto
-                        y otro clic sobre el segundo punto.
-                        La distancia quedará visible en el modelo.
-                    </span>
-
-                </div>
-
-
-                <div>
-                    <strong>
-                        Mediciones múltiples
-                    </strong>
-
-                    <span>
-                        Después de completar una medición,
-                        podés seleccionar otros dos puntos
-                        para crear otra. Las anteriores permanecen.
-                    </span>
-                </div>
-
-
-                <div>
-                    <strong>
-                        Eliminar mediciones
-                    </strong>
-
-                    <span>
-                        Cuando exista al menos una medición
-                        aparecerá una ventana donde podés
-                        eliminar una medición o todas.
-                    </span>
-                </div>
-
-
-                <div>
-                    <strong>
-                        Vista inicial
-                    </strong>
-
-                    <span>
-                        Restablece la posición inicial
-                        de la cámara.
-                    </span>
-                </div>
-
-
-                <div>
-                    <strong>
-                        Teclado
-                    </strong>
-
-                    <span>
-                        H vuelve a la vista inicial.
-                        + y − controlan el zoom.
-                        Esc cierra ventanas.
-                    </span>
-                </div>
-
-            </div>
+            </footer>
 
         </div>
 
