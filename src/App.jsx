@@ -36,10 +36,30 @@ const socialLinks = {
 };
 
 const services = [
-  { number: '01', title: 'Diseño', slug: 'diseno-de-stands', text: 'Concepto, arquitectura espacial y una identidad que se entiende desde lejos.', icon: Layers3 },
-  { number: '02', title: 'Fabricación', slug: 'fabricacion-de-stands', text: 'Carpintería, metal, gráfica, iluminación y detalles preparados para construir.', icon: Ruler },
-  { number: '03', title: 'Montaje', slug: 'montaje-de-stands', text: 'Coordinación, instalación y puesta a punto para llegar al evento con todo resuelto.', icon: Box },
-  { number: '04', title: 'Presentación 3D', slug: 'presentacion-3d', text: 'Experiencias interactivas para recorrer el proyecto antes de fabricarlo.', icon: Sparkles }
+  {
+    number: '01',
+    title: 'Diseño de stands',
+    text: 'Desarrollamos el concepto, la arquitectura espacial, los recorridos y la identidad visual de cada stand para ferias, exposiciones y eventos en Paraguay.',
+    icon: Layers3
+  },
+  {
+    number: '02',
+    title: 'Fabricación de stands',
+    text: 'Llevamos el diseño a piezas reales mediante carpintería, metal, gráfica, iluminación y terminaciones preparadas para construir el espacio.',
+    icon: Ruler
+  },
+  {
+    number: '03',
+    title: 'Montaje de stands',
+    text: 'Coordinamos la instalación, gráfica, detalles y puesta a punto del stand para que llegue al evento listo para funcionar.',
+    icon: Box
+  },
+  {
+    number: '04',
+    title: 'Presentación 3D de stands',
+    text: 'Mostramos los proyectos en 3D para recorrer el espacio, comprender la propuesta y revisar elementos antes de fabricar.',
+    icon: Sparkles
+  }
 ];
 
 function App() {
@@ -192,7 +212,7 @@ function App() {
               <button
                 key={item.video}
                 className={index === showcaseIndex ? 'active' : ''}
-                onClick={() => { setShowcaseDirection(index > showcaseIndex ? 1 : -1); setShowcaseIndex(index); }}
+                onClick={() => setShowcaseIndex(index)}
                 aria-label={`Mostrar presentación ${index + 1}`}
               />
             ))}
@@ -226,12 +246,25 @@ function App() {
         >
           <section id="services" className="services section" data-header-theme="dark">
             <div className="section-label">02 — SERVICIOS</div>
-            <div className="section-heading"><h2>Del concepto<br /><em>a la realidad.</em></h2><p>Un equipo para pensar, construir y entregar el espacio completo.</p></div>
+            <div className="section-heading">
+              <div>
+                <h2>Del concepto<br /><em>a la realidad.</em></h2>
+                <p className="muted-copy">
+                  Universal Group es una empresa de stands en Paraguay dedicada al diseño, fabricación y montaje de espacios para ferias, exposiciones y eventos.
+                  Trabajamos el proyecto completo para que la arquitectura, la identidad de marca y la construcción formen una sola propuesta.
+                </p>
+              </div>
+              <p>
+                Diseño de stands, fabricación, montaje y presentación 3D, integrados en un mismo proceso y dentro de la experiencia real de Universal Group.
+              </p>
+            </div>
+
             <div className="service-grid">
               {services.map(({ number, title, text, icon: Icon }) => (
                 <motion.article
                   key={number}
                   className="service-card"
+                  id={`servicio-${number}`}
                   whileHover={{ y: -8 }}
                   transition={{ duration: .25 }}
                   onPointerMove={(event) => {
@@ -241,9 +274,17 @@ function App() {
                   }}
                 >
                   <div className="service-top"><span>{number}</span><Icon size={21} strokeWidth={1.5} /></div>
-                  <h3>{title}</h3><p>{text}</p>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
                 </motion.article>
               ))}
+            </div>
+
+            <div className="services-detail-copy">
+              <p className="muted-copy">
+                Nuestro trabajo abarca desde el diseño conceptual y la arquitectura del stand hasta su fabricación, montaje y visualización 3D.
+                Cada proyecto se adapta a la marca, al producto, al espacio disponible y a las condiciones reales de cada feria o exposición en Paraguay.
+              </p>
             </div>
           </section>
 
@@ -405,7 +446,7 @@ function App() {
                   <small>WHATSAPP / TELÉFONO</small>
                   <strong>+595 991 549 500</strong>
                   <a
-                    href="https://wa.me/595991549500"
+                    href="wa.link/oiwtx3"
                     target="_blank"
                     rel="noreferrer"
                   >
