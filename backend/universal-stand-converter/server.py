@@ -5,39 +5,19 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import (
-    FastAPI,
-    File,
-    Form,
-    HTTPException,
-    UploadFile
-)
-
-from fastapi.middleware.cors import (
-    CORSMiddleware
-)
-
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from openskp import SkpFile
 from openskp.export import glb
-
-from supabase import (
-    create_client,
-    Client
-)
+from supabase import create_client, Client
 
 
 # =====================================================
 # CONFIGURACIÓN
 # =====================================================
 
-SUPABASE_URL = os.environ.get(
-    "SUPABASE_URL"
-)
-
-SUPABASE_SECRET_KEY = os.environ.get(
-    "SUPABASE_SECRET_KEY"
-)
-
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
 SUPABASE_BUCKET = "models"
 
 
@@ -70,20 +50,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "*"
-    ],
-
+    allow_origins=["*"],
     allow_credentials=False,
-
-    allow_methods=[
-        "*"
-    ],
-
-    allow_headers=[
-        "*"
-    ]
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 
@@ -91,10 +61,7 @@ app.add_middleware(
 # UTILIDADES
 # =====================================================
 
-def safe_name(
-    value: str
-) -> str:
-
+def safe_name(value: str) -> str:
     value = Path(
         value or "model.skp"
     ).stem
@@ -105,21 +72,15 @@ def safe_name(
         value
     ).strip("-")
 
-    return (
-        value or
-        "model"
-    )
+    return value or "model"
 
 
 # =====================================================
 # HEALTH CHECK
 # =====================================================
 
-@app.get(
-    "/api/health"
-)
+@app.get("/api/health")
 def health():
-
     return {
         "ok": True,
         "converter": "OpenSKP",
@@ -131,80 +92,46 @@ def health():
 # CONVERSIÓN SKP → GLB
 # =====================================================
 
-@app.post(
-    "/api/convert-skp"
-)
-async def convert_skp(
-
-    file: UploadFile =
-        File(...),
-
-    project_id: str =
-        Form(...),
-
-    project_slug: str =
-        Form("")
+@app.post("/api/convert-skp")
+def convert_skp(
+    file: UploadFile = File(...),
+    project_id: str = Form(...),
+    project_slug: str = Form("")
 ):
-
-    original_name = (
-        file.filename or
-        "model.skp"
-    )
-
+    original_name = file.filename or "model.skp"
 
     # -------------------------------------------------
     # VALIDAR EXTENSIÓN
     # -------------------------------------------------
 
-    if not original_name.lower().endswith(
-        ".skp"
-    ):
-
+    if not original_name.lower().endswith(".skp"):
         raise HTTPException(
             status_code=400,
-            detail=
-                "Solo se permiten archivos .SKP."
+            detail="Solo se permiten archivos .SKP."
         )
-
 
     # -------------------------------------------------
     # VALIDAR PROYECTO
     # -------------------------------------------------
 
     if not project_id.strip():
-
         raise HTTPException(
             status_code=400,
-            detail=
-                "Falta el ID del proyecto."
+            detail="Falta el ID del proyecto."
         )
-
 
     # -------------------------------------------------
     # GENERAR NOMBRES
     # -------------------------------------------------
 
-    token = (
-        uuid.uuid4()
-        .hex[:10]
-    )
-
+    token = uuid.uuid4().hex[:10]
 
     base_name = safe_name(
-        project_slug or
-        project_id
+        project_slug or project_id
     )
 
-
-    skp_name = (
-        f"{base_name}-{token}.skp"
-    )
-
-
-    glb_name = (
-        f"{base_name}-{token}.glb"
-    )
-
+    skp_name = f"{base_name}-{token}.skp"
+    glb_name = f"{base_name}-{token}.glb"
 
     # -------------------------------------------------
     # CARPETA TEMPORAL
@@ -214,18 +141,15 @@ async def convert_skp(
         prefix="universal-stand-"
     )
 
-
     skp_path = (
         Path(temporary_directory) /
         skp_name
     )
 
-
     glb_path = (
         Path(temporary_directory) /
         glb_name
     )
-
 
     try:
 
@@ -233,15 +157,11 @@ async def convert_skp(
         # GUARDAR SKP TEMPORALMENTE
         # =============================================
 
-        with skp_path.open(
-            "wb"
-        ) as destination:
-
+        with skp_path.open("wb") as destination:
             shutil.copyfileobj(
                 file.file,
                 destination
             )
-
 
         # =============================================
         # ABRIR SKP
@@ -251,23 +171,25 @@ async def convert_skp(
             str(skp_path)
         )
 
-
         # =============================================
         # PARSEAR SKP
         # =============================================
 
         skp.parse()
 
-
         # =============================================
         # EXPORTAR GLB
         # =============================================
+        #
+        # Conserva las texturas embebidas sin reducir
+        # geometría ni calidad del modelo.
+        #
 
         glb.export(
             skp,
-            str(glb_path)
+            str(glb_path),
+            textures=True
         )
-
 
         # =============================================
         # VALIDAR GLB
@@ -278,13 +200,13 @@ async def convert_skp(
             or
             glb_path.stat().st_size == 0
         ):
-
             raise HTTPException(
                 status_code=500,
-                detail=
-                    "La conversión terminó sin generar un GLB válido."
+                detail=(
+                    "La conversión terminó sin generar "
+                    "un GLB válido."
+                )
             )
-
 
         # =============================================
         # RUTA EN SUPABASE STORAGE
@@ -294,37 +216,28 @@ async def convert_skp(
             f"projects/{project_id}/{glb_name}"
         )
 
-
         # =============================================
-        # LEER GLB
+        # SUBIR GLB DIRECTAMENTE DESDE DISCO
         # =============================================
+        #
+        # Evita cargar el GLB completo en RAM con
+        # read() antes de enviarlo a Supabase.
+        #
 
-        with glb_path.open(
-            "rb"
-        ) as glb_file:
-
-            glb_data = glb_file.read()
-
-
-        # =============================================
-        # SUBIR GLB A SUPABASE
-        # =============================================
-
-        supabase.storage \
-            .from_(SUPABASE_BUCKET) \
-            .upload(
-                storage_path,
-                glb_data,
-                {
-                    "content-type":
-                        "model/gltf-binary",
-                    "cache-control":
-                        "31536000",
-                    "upsert":
-                        "true"
-                }
+        with glb_path.open("rb") as glb_file:
+            (
+                supabase.storage
+                .from_(SUPABASE_BUCKET)
+                .upload(
+                    storage_path,
+                    glb_file,
+                    {
+                        "content-type": "model/gltf-binary",
+                        "cache-control": "31536000",
+                        "upsert": "true"
+                    }
+                )
             )
-
 
         # =============================================
         # OBTENER URL PÚBLICA
@@ -338,45 +251,30 @@ async def convert_skp(
             )
         )
 
-
         # =============================================
         # RESPUESTA
         # =============================================
 
         return {
-            "ok":
-                True,
-
-            "projectId":
-                project_id,
-
-            "modelName":
-                glb_name,
-
-            "modelPath":
-                storage_path,
-
-            "modelUrl":
-                model_url,
-
-            "storage":
-                "supabase"
+            "ok": True,
+            "projectId": project_id,
+            "modelName": glb_name,
+            "modelPath": storage_path,
+            "modelUrl": model_url,
+            "storage": "supabase"
         }
 
-
     except HTTPException:
-
         raise
 
-
     except Exception as exc:
-
         raise HTTPException(
             status_code=422,
-            detail=
-                f"No se pudo convertir o guardar el SKP: {exc}"
+            detail=(
+                "No se pudo convertir o guardar el SKP: "
+                f"{exc}"
+            )
         ) from exc
-
 
     finally:
 
@@ -394,21 +292,11 @@ async def convert_skp(
 # ROOT
 # =====================================================
 
-@app.get(
-    "/"
-)
+@app.get("/")
 def root():
-
     return {
-        "ok":
-            True,
-
-        "service":
-            "Universal Stand SKP Converter",
-
-        "converter":
-            "OpenSKP",
-
-        "storage":
-            "Supabase"
+        "ok": True,
+        "service": "Universal Stand SKP Converter",
+        "converter": "OpenSKP",
+        "storage": "Supabase"
     }
