@@ -1514,13 +1514,22 @@ function setupCanvasClick() {
 /* =====================================================
    HOTSPOT
 ===================================================== */
-function focusHotspot(
+
+function selectHotspot(
     hotspot
 ) {
 
-    if (!viewer || !hotspot) {
+    if (!hotspot || !viewer) {
         return;
     }
+
+
+    selectedHotspotId =
+        hotspot.id ||
+        null;
+
+
+    renderHotspotList();
 
 
     const target =
@@ -1536,130 +1545,34 @@ function focusHotspot(
         );
 
 
-    if (!selectedMesh) {
-        return;
+    if (selectedMesh) {
+        selectMesh(
+            selectedMesh.userData?.meshIndex
+        );
     }
 
 
-    const box =
-        new viewer.THREE.Box3()
-            .setFromObject(
-                selectedMesh
-            );
+    focusModelOnHotspot(
+        hotspot
+    );
 
 
-    const center =
-        box.getCenter(
-            new viewer.THREE.Vector3()
-        );
+    showSelectedElement(
+        hotspot
+    );
 
 
-    const size =
-        box.getSize(
-            new viewer.THREE.Vector3()
-        );
+    showHotspotPopup(
+        hotspot
+    );
 
 
-    const maxSize =
-        Math.max(
-            size.x,
-            size.y,
-            size.z,
-            0.01
-        );
-
-
-    /*
-     * Tomamos la posición actual de la cámara
-     * para conservar el lado desde donde se estaba
-     * mirando el stand.
-     */
-    const cameraState =
-        viewer.getCameraState();
-
-
-    const cameraPosition =
-        new viewer.THREE.Vector3(
-            cameraState.position.x,
-            cameraState.position.y,
-            cameraState.position.z
-        );
-
-
-    /*
-     * Dirección desde el objeto hacia la cámara.
-     */
-    const direction =
-        cameraPosition
-            .clone()
-            .sub(center);
-
-
-    /*
-     * Evitamos que la cámara quede arriba o abajo
-     * del objeto. La dejamos directamente de frente.
-     */
-    direction.y = 0;
-
-
-    if (
-        direction.lengthSq() <
-        0.000001
-    ) {
-
-        direction.set(
-            0,
-            0,
-            1
-        );
-
-    } else {
-
-        direction.normalize();
-    }
-
-
-    /*
-     * Distancia al objeto.
-     *
-     * 1.6 permite que el objeto entre completo
-     * sin alejar demasiado la cámara.
-     */
-    const distance =
-        Math.max(
-            maxSize * 1.6,
-            0.5
-        );
-
-
-    const newPosition =
-        center.clone()
-            .add(
-                direction.multiplyScalar(
-                    distance
-                )
-            );
-
-
-    /*
-     * La cámara queda a la misma altura del centro
-     * del elemento seleccionado.
-     */
-    newPosition.y =
-        center.y;
-
-
-    viewer.setCameraState(
-        {
-            position:
-                newPosition,
-
-            target:
-                center
-        },
-        true
+    focusHotspot(
+        hotspot
     );
 }
+
+
 /* =====================================================
    ELEMENTO SELECCIONADO
 ===================================================== */
