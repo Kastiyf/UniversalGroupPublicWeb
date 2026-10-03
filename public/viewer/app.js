@@ -1515,21 +1515,13 @@ function setupCanvasClick() {
    HOTSPOT
 ===================================================== */
 
-function selectHotspot(
+function focusHotspot(
     hotspot
 ) {
 
-    if (!hotspot || !viewer) {
+    if (!viewer || !hotspot) {
         return;
     }
-
-
-    selectedHotspotId =
-        hotspot.id ||
-        null;
-
-
-    renderHotspotList();
 
 
     const target =
@@ -1545,33 +1537,88 @@ function selectHotspot(
         );
 
 
-    if (selectedMesh) {
-        selectMesh(
-            selectedMesh.userData?.meshIndex
-        );
+    if (!selectedMesh) {
+        return;
     }
 
 
-    focusModelOnHotspot(
-        hotspot
+    const box =
+        new viewer.THREE.Box3()
+            .setFromObject(
+                selectedMesh
+            );
+
+
+    const center =
+        box.getCenter(
+            new viewer.THREE.Vector3()
+        );
+
+
+    const sphere =
+        box.getBoundingSphere(
+            new viewer.THREE.Sphere()
+        );
+
+
+    const radius =
+        Math.max(
+            sphere.radius,
+            0.05
+        );
+
+
+    const camera =
+        viewer.camera;
+
+
+    const currentDirection =
+        new viewer.THREE.Vector3();
+
+
+    camera.getWorldDirection(
+        currentDirection
     );
 
 
-    showSelectedElement(
-        hotspot
-    );
+    currentDirection.normalize();
 
 
-    showHotspotPopup(
-        hotspot
-    );
+    /*
+     * Mantenemos el mismo lado desde el que
+     * estaba mirando el usuario, pero ahora
+     * colocamos la cámara directamente de frente
+     * al elemento seleccionado.
+     */
+    const distance =
+        Math.max(
+            radius * 2.2,
+            0.5
+        );
 
 
-    focusHotspot(
-        hotspot
+    const cameraPosition =
+        center.clone()
+            .add(
+                currentDirection
+                    .clone()
+                    .multiplyScalar(
+                        -distance
+                    )
+            );
+
+
+    viewer.setCameraState(
+        {
+            position:
+                cameraPosition,
+
+            target:
+                center
+        },
+        true
     );
 }
-
 
 /* =====================================================
    ELEMENTO SELECCIONADO

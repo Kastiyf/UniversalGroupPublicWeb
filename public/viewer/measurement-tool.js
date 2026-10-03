@@ -13,10 +13,12 @@ export function createMeasurementTool(viewer, options = {}) {
 
 
     /*
-     * El GLB conserva las unidades del modelo utilizadas por el visor.
-     * En este proyecto esas unidades corresponden directamente a metros.
+     * Los GLB generados desde SketchUp en este proyecto
+     * trabajan en milímetros. El visor mantiene esa escala
+     * para navegación y colisiones, pero las mediciones se
+     * muestran al usuario en metros.
      */
-    const MODEL_UNITS_TO_METERS = 1;
+    const MODEL_UNITS_TO_METERS = 0.001;
 
 
     const params =
