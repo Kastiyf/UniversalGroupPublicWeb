@@ -76,11 +76,136 @@ function getProjects() {
 }
 
 
+function getProjectSlugFromUrl() {
+
+    return (
+        new URLSearchParams(
+            window.location.search
+        )
+            .get(
+                'project'
+            ) ||
+        ''
+    )
+        .trim()
+        .toLowerCase();
+}
+
+
 async function getActiveProject() {
 
     const projects =
         getProjects();
 
+    /*
+     * Si el Admin está abierto con ?project=slug,
+     * ese proyecto es la fuente de verdad.
+     *
+     * Esto evita depender de localStorage para saber
+     * qué proyecto está activo. El proyecto ya está
+     * indicado explícitamente en la URL.
+     */
+    const requestedSlug =
+        getProjectSlugFromUrl();
+
+    if (requestedSlug) {
+
+        try {
+
+            const response =
+                await supabase
+                    .from('projects')
+                    .select('*')
+                    .ilike(
+                        'slug',
+                        requestedSlug
+                    )
+                    .maybeSingle();
+
+            if (
+                !response.error &&
+                response.data
+            ) {
+
+                const onlineProject =
+                    response.data;
+
+                const index =
+                    projects.findIndex(
+                        item =>
+                            String(item.id) ===
+                            String(onlineProject.id)
+                    );
+
+                if (index >= 0) {
+
+                    projects[index] = {
+                        ...projects[index],
+                        ...onlineProject
+                    };
+
+                } else {
+
+                    projects.push(
+                        onlineProject
+                    );
+                }
+
+                saveProjects(
+                    projects,
+                    onlineProject
+                );
+
+                return {
+                    projects,
+                    project:
+                        onlineProject
+                };
+            }
+
+        } catch (error) {
+
+            console.error(
+                'SKP: no se pudo cargar el proyecto de la URL desde Supabase:',
+                error
+            );
+        }
+
+        /*
+         * Si Supabase no responde, intentamos usar
+         * el proyecto local que coincida con el slug.
+         */
+        const localBySlug =
+            projects.find(
+                item =>
+                    String(
+                        item?.slug || ''
+                    )
+                        .trim()
+                        .toLowerCase() ===
+                    requestedSlug
+            );
+
+        if (localBySlug) {
+
+            saveProjects(
+                projects,
+                localBySlug
+            );
+
+            return {
+                projects,
+                project:
+                    localBySlug
+            };
+        }
+    }
+
+    /*
+     * Compatibilidad con el sistema anterior:
+     * si no hay ?project=..., usamos el proyecto
+     * guardado como activo en localStorage.
+     */
     const activeId =
         localStorage.getItem(
             ACTIVE_PROJECT_KEY
@@ -94,10 +219,16 @@ async function getActiveProject() {
                 await supabase
                     .from('projects')
                     .select('*')
-                    .eq('id', activeId)
+                    .eq(
+                        'id',
+                        activeId
+                    )
                     .maybeSingle();
 
-            if (!response.error && response.data) {
+            if (
+                !response.error &&
+                response.data
+            ) {
 
                 const onlineProject =
                     response.data;
@@ -110,12 +241,17 @@ async function getActiveProject() {
                     );
 
                 if (index >= 0) {
+
                     projects[index] = {
                         ...projects[index],
                         ...onlineProject
                     };
+
                 } else {
-                    projects.push(onlineProject);
+
+                    projects.push(
+                        onlineProject
+                    );
                 }
 
                 saveProjects(
@@ -125,14 +261,15 @@ async function getActiveProject() {
 
                 return {
                     projects,
-                    project: onlineProject
+                    project:
+                        onlineProject
                 };
             }
 
         } catch (error) {
 
             console.error(
-                'SKP: no se pudo cargar el proyecto desde Supabase:',
+                'SKP: no se pudo cargar el proyecto activo desde Supabase:',
                 error
             );
         }
@@ -155,12 +292,16 @@ async function getActiveProject() {
         return null;
     }
 
+    saveProjects(
+        projects,
+        project
+    );
+
     return {
         projects,
         project
     };
 }
-
 
 
 function saveProjects(
@@ -341,8 +482,8 @@ uploadButton?.addEventListener(
             projects.findIndex(
                 item =>
                     item &&
-                    item.id ===
-                        project.id
+                    String(item.id) ===
+                        String(project.id)
             );
 
         if (projectIndex === -1) {
