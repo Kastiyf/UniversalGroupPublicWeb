@@ -2288,27 +2288,40 @@ function focusHotspot(
         );
 
 
+    /*
+     * Calculamos una distancia suficiente para
+     * mostrar completo el elemento seleccionado.
+     */
     const distance =
-        maxSize * 2.4;
+        Math.max(
+            maxSize * 2.0,
+            1.5
+        );
 
 
-    const direction =
-        new viewer.THREE.Vector3(
-            1,
-            0.55,
-            1
-        ).normalize();
-
-
+    /*
+     * FRONT VIEW
+     *
+     * El stand se observa desde el frente,
+     * sobre el eje Z.
+     *
+     * No usamos la posición actual de la cámara
+     * porque eso provocaba que al seleccionar
+     * elementos laterales la cámara se fuera
+     * hacia un costado.
+     */
     const cameraPosition =
-        center.clone()
-            .add(
-                direction.multiplyScalar(
-                    distance
-                )
-            );
+        new viewer.THREE.Vector3(
+            center.x,
+            center.y,
+            center.z + distance
+        );
 
 
+    /*
+     * Miramos directamente al centro
+     * del elemento seleccionado.
+     */
     viewer.setCameraState(
         {
             position:
