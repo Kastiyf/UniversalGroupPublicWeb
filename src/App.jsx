@@ -32,7 +32,7 @@ const VIEWER_URL = '/viewer/index.html?project=enicab-9cwtd';
 const socialLinks = {
   instagram: 'https://www.instagram.com/universalgroup.py/',
   facebook: 'https://www.facebook.com/universalparaguay',
-  whatsapp: 'https://wa.me/?text=Hola%20Universal%20Group%2C%20quiero%20consultar%20por%20un%20stand.'
+  whatsapp: 'wa.link/oiwtx3'
 };
 
 const services = [
