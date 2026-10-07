@@ -147,6 +147,27 @@ function initFormAndProjects() {
     const saveStandBtn = document.getElementById('saveStand');
     const resetStandBtn = document.getElementById('resetStand');
 
+    let standSaveStatus = document.getElementById('standSaveStatus');
+
+    if (saveStandBtn && !standSaveStatus) {
+        const saveGroup = document.createElement('div');
+        saveGroup.className = 'stand-save-group';
+        saveGroup.style.display = 'flex';
+        saveGroup.style.flexDirection = 'column';
+        saveGroup.style.alignItems = 'flex-start';
+        saveGroup.style.gap = '6px';
+
+        saveStandBtn.parentNode.insertBefore(saveGroup, saveStandBtn);
+        saveGroup.appendChild(saveStandBtn);
+
+        standSaveStatus = document.createElement('div');
+        standSaveStatus.id = 'standSaveStatus';
+        standSaveStatus.className = 'project-status';
+        standSaveStatus.setAttribute('aria-live', 'polite');
+        standSaveStatus.textContent = 'Los cambios todavía no se guardaron.';
+        saveGroup.appendChild(standSaveStatus);
+    }
+
     const projectSelector = document.getElementById('projectSelector');
     const newProjectBtn = document.getElementById('newProject');
     const deleteProjectBtn = document.getElementById('deleteProject');
@@ -306,7 +327,7 @@ function initFormAndProjects() {
         }
     });
 
-    saveStandBtn?.addEventListener('click', () => {
+    saveStandBtn?.addEventListener('click', async () => {
         standData.cliente = clientInput?.value.trim() || '';
         standData.proyecto = projectInput?.value.trim() || '';
         standData.ancho = parseFloat(widthInput?.value) || 0;
@@ -316,9 +337,28 @@ function initFormAndProjects() {
         standData.descripcion = descriptionInput?.value.trim() || '';
         standData.slug = slugInput?.value.trim() || standData.slug;
 
-        saveCurrentProjectOnly();
+        if (standSaveStatus) {
+            standSaveStatus.textContent = 'Guardando stand...';
+            standSaveStatus.style.color = '#666';
+        }
+
+        const saved = await saveProjectOnline();
+
+        if (!saved) {
+            if (standSaveStatus) {
+                standSaveStatus.textContent = '✕ No se pudo guardar el stand en Supabase.';
+                standSaveStatus.style.color = '#b42318';
+            }
+            return;
+        }
+
         updatePublicLink();
         updateProjectSelector();
+
+        if (standSaveStatus) {
+            standSaveStatus.textContent = '✓ Stand guardado correctamente en Supabase.';
+            standSaveStatus.style.color = '#187a3d';
+        }
 
         if (projectStatus) {
             projectStatus.textContent = 'Stand guardado correctamente.';

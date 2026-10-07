@@ -954,6 +954,11 @@ export function createViewer(options = {}) {
             texture.generateMipmaps =
                 true;
 
+            // Corrige la orientación vertical de las texturas provenientes
+            // del GLB para que las gráficas se vean derechas.
+            texture.repeat.y = -1;
+            texture.offset.y = 1;
+
             texture.needsUpdate =
                 true;
         });
